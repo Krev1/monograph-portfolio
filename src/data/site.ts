@@ -11,8 +11,32 @@ export const profile = {
 };
 export type Project = {id:string;title:string;type:string;year:string;description:string;stack:string[];url?:string};
 // Illustrative concepts, not claims of completed professional projects.
-export const projects:Project[] = [
-  {id:"001",title:"SURVIVAL WORLD",type:"GAME / SYSTEM DESIGN",year:"2026",description:"An exploration prototype concept focused on worldbuilding and survival systems.",stack:["TypeScript","Game Design"]},
-  {id:"002",title:"PRODUCT INTERFACE",type:"WEB / UI DESIGN",year:"2026",description:"An experimental digital interface focused on clarity and responsive layouts.",stack:["Next.js","React","CSS"]},
-  {id:"003",title:"DIGITAL STUDIO",type:"CREATIVE DEVELOPMENT",year:"2026",description:"A minimal web experience combining expressive typography and subtle interactions.",stack:["TypeScript","UI/UX"]},
+export const projects: Project[] = [
+  {
+    id: "001",
+    title: "SPENDWISE AI",
+    type: "AI / PYTHON / FINTECH",
+    year: "2026",
+    description: "In-progress personal finance and AI learning project. Includes transaction and CSV tooling, specifications, test coverage, and prototype baselines. The full web application and trained ML pipeline are not complete.",
+    stack: ["Python", "AI Research", "Data Processing", "Testing"],
+    url: "https://github.com/Krev1/spendwise-ai",
+  },
+  {
+    id: "002",
+    title: "LEARN",
+    type: "PYTHON / LEARNING JOURNAL",
+    year: "2026",
+    description: "Documented Python self-study journey with lessons, exercises and a companion learning track for SpendWise AI.",
+    stack: ["Python", "Computer Science", "Self-study"],
+    url: "https://github.com/Krev1/Learn",
+  },
+  {
+    id: "003",
+    title: "KREV1 PORTFOLIO",
+    type: "UI/UX / WEB DEVELOPMENT",
+    year: "2026",
+    description: "This personal portfolio, built using Next.js and TypeScript, with a cinematic minimalist visual direction and live GitHub repository integration.",
+    stack: ["Next.js", "TypeScript", "UI/UX", "GitHub API"],
+    url: "https://github.com/Krev1/monograph-portfolio",
+  },
 ];
