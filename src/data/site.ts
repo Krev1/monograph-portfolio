@@ -10,7 +10,7 @@ export const profile = {
   skills: ["UI/UX Design", "Artificial Intelligence", "Computer Science", "Full-stack Development", "Game Design"],
 };
 export type Project = {id:string;title:string;type:string;year:string;description:string;stack:string[];url?:string};
-// Illustrative concepts, not claims of completed professional projects.
+// Verified repository-backed projects. Avoid describing unfinished features as completed.
 export const projects: Project[] = [
   {
     id: "001",
