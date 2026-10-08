@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { profile, projects } from "@/data/site";
 import GitHubRepos from "./github-repos";
+import DecadeDriver from "./decade-driver";
 
 export default function Portfolio() {
  const [menuOpen,setMenuOpen]=useState(false);
@@ -21,17 +22,7 @@ export default function Portfolio() {
     <div className="k-hero-center"><p className="k-overline">COMPUTER SCIENCE / ARTIFICIAL INTELLIGENCE</p><h1 id="k-hero-title">BEYOND<br/>THE <span>INTERFACE.</span></h1><p className="k-hero-subtitle">Human-centered design. Intelligent engineering.</p></div>
     <div className="k-hero-bottom"><span>UI/UX DESIGN — AI — SOFTWARE DEVELOPMENT</span><a href="#work">SCROLL TO EXPLORE ↓</a></div>
    </section>
-   <section id="work" className="k-work">
-    <div className="k-section-heading"><span>01 / SELECTED WORK</span><span>FEATURED PROJECTS — 2026</span></div>
-    {projects.map((project,index)=><article className="k-project" key={project.id}>
-     <div className={"k-project-canvas k-project-canvas-"+index}>
-      <div className="k-project-canvas-top"><span>PROJECT / {project.id}</span><span>{project.type}</span></div>
-      <strong>{project.title}</strong>
-      <div className="k-project-canvas-bottom"><span>{project.year}</span><span>DESIGN / DEVELOPMENT</span></div>
-     </div>
-     <div className="k-project-details"><div><span className="k-number">0{index+1} — {project.type}</span><h2>{project.title}</h2><p>{project.description}</p></div><div className="k-project-links">{project.id==="001"&&<a href="/projects/spendwise-ai">CASE STUDY ↗</a>}{project.url&&<a href={project.url} target="_blank" rel="noreferrer">GITHUB ↗</a>}</div></div>
-    </article>)}
-   </section>
+   <DecadeDriver />
    <section id="about" className="k-about">
     <div className="k-section-heading"><span>02 / ABOUT</span><span>WHO I AM</span></div>
     <div className="k-about-content"><h2>LESS,<br/><span>BUT BETTER.</span></h2><div className="k-about-description"><p>{profile.about}</p><div className="k-expertise-list"><div><span>01</span><strong>UI/UX DESIGN</strong></div><div><span>02</span><strong>ARTIFICIAL INTELLIGENCE</strong></div><div><span>03</span><strong>FULL-STACK DEVELOPMENT</strong></div><div><span>04</span><strong>GAME DESIGN</strong></div></div></div></div>
