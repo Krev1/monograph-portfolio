@@ -105,3 +105,14 @@
 @media(max-width:900px){.expertise-tile{min-height:490px}.tile-visual{min-height:240px}.expertise-strip{flex-wrap:wrap}.expertise-heading{grid-template-columns:1fr}.expertise-heading>p{max-width:340px}}
 @media(max-width:650px){.site-header nav a[href="#expertise"]{display:none}.hero-topline,.hero-bottomline{font-size:8px}.expertise-section{padding:70px 5vw}.expertise-grid,#projects .project-list{grid-template-columns:1fr}.expertise-tile{min-height:450px;padding:23px}.expertise-strip,#projects .project:first-child{grid-column:auto}#projects .project:first-child .project-image{aspect-ratio:1.35;min-height:280px}#projects .project-info{flex-direction:column}#projects .project-actions{flex-direction:row}.design-window{width:55%}.ai-pulse{width:160px;height:160px}}
 @media(prefers-reduced-motion:reduce){.expertise-tile{transition:none}}
+
+/* Phase 4: accessible mobile navigation and progressive scroll reveals */
+.mobile-menu-toggle{display:none;background:transparent;border:1px solid #586a63;color:#f0f4ed;letter-spacing:.16em;padding:11px 14px;font-size:11px;cursor:pointer;z-index:12}
+.reveal-on-scroll{opacity:1;transform:none}
+@media(prefers-reduced-motion:no-preference){.reveal-on-scroll:not(.is-visible){opacity:0;transform:translateY(34px)}.reveal-on-scroll{transition:opacity .72s cubic-bezier(.2,.7,.2,1),transform .72s cubic-bezier(.2,.7,.2,1)}}
+#projects .project-image{transition:filter .4s,transform .5s cubic-bezier(.2,.8,.2,1)}
+#projects .showcase-card:hover .project-image{filter:brightness(1.13)}
+#projects .project-image:after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent 15%,#d5f5e512 50%,transparent 80%);transform:translateX(-105%);transition:transform .85s;pointer-events:none}
+#projects .showcase-card:hover .project-image:after{transform:translateX(105%)}
+@media(max-width:720px){.site-header{position:sticky;top:0;height:72px}.mobile-menu-toggle{display:block;order:3}.site-header .header-index{display:none}.site-header nav{position:absolute;left:0;right:0;top:100%;padding:20px 5vw 30px;background:#0b1010;border-bottom:1px solid #495b52;display:none;flex-direction:column;gap:0;box-shadow:0 22px 35px #0008}.site-header nav.nav-open{display:flex}.site-header nav a,.site-header nav a[href="#expertise"]{display:block;font-size:16px;padding:15px 0;border-bottom:1px solid #293b34;letter-spacing:.13em}.hero-topline{top:26px}.wallhack-hero{min-height:calc(90svh - 72px)}}
+@media(prefers-reduced-motion:reduce){.reveal-on-scroll{opacity:1!important;transform:none!important;transition:none!important}}
