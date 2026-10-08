@@ -1,9 +1,9 @@
-// Replace all sample information below before publishing your portfolio.
+// Update email, LinkedIn and resume only after verifying your public contact details.
 export const profile = {
-  name: "YOUR NAME", initials: "YN", role: "Computer Science Student · Artificial Intelligence",
-  location: "Ho Chi Minh City, Vietnam", email: "hello@example.com",
+  name: "Tri (Krev1)", initials: "KT", role: "Computer Science Student · Artificial Intelligence",
+  location: "Ho Chi Minh City, Vietnam", email: "",
   github: "https://github.com/Krev1", githubUsername: "Krev1",
-  linkedin: "https://www.linkedin.com/", resumeUrl: "/resume.pdf",
+  linkedin: "", resumeUrl: "/resume.pdf",
   headline: ["DESIGNING INTELLIGENT.", "DIGITAL EXPERIENCES."],
   description: "Computer Science student specializing in Artificial Intelligence, with a primary focus on UI/UX design and AI-powered digital experiences.",
   about: "I study Computer Science with a specialization in Artificial Intelligence. My main interests are human-centered UI/UX and AI; I also explore full-stack software development and game design.",
