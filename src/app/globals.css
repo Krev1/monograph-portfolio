@@ -31,3 +31,38 @@
 @media(max-width:850px){.wallhack-hero{min-height:85svh;padding-block:8vh 6vh}.hero-orb{right:-20%;top:15%;width:80vw;opacity:.62}.wallhack-hero h1{font-size:clamp(50px,10vw,90px)}.section{padding-block:80px}.project-image{min-height:270px}}
 @media(max-width:480px){.wallhack-hero{min-height:78svh}.hero-orb{top:17%;right:-30%;width:100vw}.wallhack-hero h1{font-size:11vw}.project-image{min-height:220px}}
 @media(prefers-reduced-motion:reduce){.hero-orb{animation:none}}
+
+/* Phase 3: premium project showcase and dedicated case study */
+.showcase-card .project-image{transition:filter .45s ease,transform .45s ease;isolation:isolate}
+.showcase-card:hover .project-image{filter:brightness(1.15)}
+.showcase-mark{position:absolute;right:30px;bottom:35%;font-size:58px;font-weight:300;opacity:.35;transition:opacity .3s,transform .3s}
+.showcase-card:hover .showcase-mark{opacity:1;transform:translate(6px,-6px)}
+.project-actions{display:flex;align-items:start;gap:14px;flex-wrap:wrap;padding-top:12px}
+.case-link{font-size:11px;white-space:nowrap;letter-spacing:.12em;border-bottom:1px solid #a6b7b0;padding-bottom:9px}
+.case-link:hover{color:#bddbd0}
+.case-study{background:#080b0c;color:#f3f4f0;min-height:100vh}
+.case-nav{height:80px;display:flex;align-items:center;justify-content:space-between;padding:0 5vw;border-bottom:1px solid #34413e;font-size:11px;letter-spacing:.15em}
+.case-hero{padding:95px 5vw 0;overflow:hidden}
+.case-hero h1{font-family:'Space Grotesk',sans-serif;font-size:clamp(60px,13vw,180px);font-weight:500;letter-spacing:-.095em;line-height:.9;margin:45px 0 35px}
+.case-hero h1 em,.case-narrative h2 em,.case-end h2 em{color:#a1bcb0;font-style:normal}
+.case-hero>p{max-width:680px;font-size:clamp(17px,2vw,24px);color:#aab7b2;line-height:1.5}
+.case-hero-art{position:relative;height:clamp(280px,42vw,570px);margin-top:65px;overflow:hidden;background:radial-gradient(circle at 53% 45%,#afcbb6 0%,#607e74 12%,#2b4a49 30%,#101b1c 58%,#0b1113 90%);display:flex;align-items:flex-end;padding:28px;color:#dceae2}
+.case-hero-art:before,.case-hero-art:after,.case-art-ring{content:"";position:absolute;border:1px solid #d8eee299;border-radius:50%;left:50%;top:45%;transform:translate(-50%,-50%) rotate(-24deg)}
+.case-hero-art:before{height:70%;aspect-ratio:1;box-shadow:0 0 70px #b4ded380}
+.case-hero-art:after{height:115%;aspect-ratio:1.5;border-color:#c3ded044}
+.case-art-ring{height:39%;aspect-ratio:1;box-shadow:inset 0 0 50px #c2e7d380}
+.case-hero-art span{font-size:10px;letter-spacing:.17em;z-index:1}
+.case-overview{display:grid;grid-template-columns:repeat(3,1fr);gap:25px;padding:45px 5vw;border-block:1px solid #34413e}
+.case-overview div{display:flex;flex-direction:column;gap:14px}
+.case-overview strong{font-size:15px;font-weight:500}
+.case-narrative,.case-end{padding:120px 5vw;max-width:1300px;margin:auto}
+.case-narrative h2,.case-end h2{font-family:'Space Grotesk',sans-serif;font-size:clamp(43px,6vw,90px);letter-spacing:-.075em;font-weight:500;line-height:1.06}
+.case-step{border-top:1px solid #34413e;padding:36px 0;display:grid;grid-template-columns:27% 73%;gap:20px}
+.case-step>span{font-size:11px;letter-spacing:.12em;color:#afc5ba}
+.case-step h3{font-size:clamp(24px,3vw,42px);letter-spacing:-.05em;font-weight:500;margin:0 0 15px}
+.case-step p{max-width:680px;line-height:1.8;color:#abb8b2}
+.case-end{border-top:1px solid #34413e;display:flex;flex-direction:column;align-items:flex-start;gap:24px}
+.case-end .primary-action{display:inline-block;background:#e4ebe3;color:#101515;padding:18px 23px;font-size:12px}
+.case-back{font-size:11px;letter-spacing:.12em;margin-top:15px}
+.case-study footer{display:flex;justify-content:space-between;padding:35px 5vw;border-top:1px solid #34413e;font-size:11px;letter-spacing:.12em;color:#abb8b2}
+@media(max-width:680px){.project-info{flex-direction:column}.project-actions{padding-top:0}.showcase-mark{font-size:40px}.case-nav{font-size:9px}.case-hero{padding-top:65px}.case-hero-art{margin-top:50px}.case-overview{grid-template-columns:1fr;gap:27px}.case-narrative,.case-end{padding:75px 5vw}.case-step{grid-template-columns:1fr;gap:12px}}
