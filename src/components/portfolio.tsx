@@ -1,19 +1,45 @@
 "use client";
-import {useEffect,useState} from "react";
-import {profile,projects} from "@/data/site";
+import { useState } from "react";
+import { profile, projects } from "@/data/site";
 import GitHubRepos from "./github-repos";
-export default function Portfolio(){
+
+export default function Portfolio() {
  const [menuOpen,setMenuOpen]=useState(false);
- useEffect(()=>{const nodes=document.querySelectorAll<HTMLElement>(".reveal-on-scroll");if(!("IntersectionObserver" in window)){nodes.forEach(n=>n.classList.add("is-visible"));return;}const observer=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add("is-visible");observer.unobserve(e.target)}})},{threshold:0.08,rootMargin:"0px 0px -30px 0px"});nodes.forEach(n=>observer.observe(n));return()=>observer.disconnect()},[]);
-
- return <><header className="site-header"><button className="mobile-menu-toggle" type="button" aria-label={menuOpen?"Close menu":"Open menu"} aria-expanded={menuOpen} aria-controls="primary-navigation" onClick={()=>setMenuOpen(v=>!v)}>{menuOpen?"CLOSE ✕":"MENU ☰"}</button><a href="#top" className="logo">KREV1<span>®</span></a><nav id="primary-navigation" className={menuOpen?"nav-open":""} aria-label="Main navigation" onClick={e=>{if((e.target as HTMLElement).closest("a"))setMenuOpen(false)}}><a href="#about">ABOUT</a><a href="#expertise">EXPERTISE</a><a href="#projects">PROJECTS</a><a href="#github">GITHUB</a><a href="#contact">CONTACT</a></nav><span className="header-index">DESIGN × INTELLIGENCE</span></header>
- <main id="top"><section className="hero wallhack-hero"><div className="hero-topline"><span>PORTFOLIO / 2026</span><span>DESIGN / AI / DEVELOPMENT</span></div><div className="hero-atmosphere" aria-hidden="true"><div className="hero-orb"><div className="orb-core"/></div><span className="orb-caption">HUMAN × MACHINE / 001</span></div><p className="eyebrow"><span className="dot"/> UI/UX DESIGN — ARTIFICIAL INTELLIGENCE</p><h1>{profile.headline.map(line=><span key={line}>{line}</span>)}</h1><div className="hero-bottom"><p>{profile.description}</p><a href="#projects" className="circle-link" aria-label="View projects">↘</a></div><div className="hero-bottomline"><span>SELECTED WORK — SCROLL TO EXPLORE</span><span>01 / 05</span></div></section>
- <section id="about" className="section reveal-on-scroll"><p className="section-label">01 / ABOUT</p><div className="section-main"><p className="eyebrow">INTRODUCTION</p><h2>Human-first design.<br/><em>AI-driven thinking.</em></h2><p className="subtext">{profile.about}</p><div className="details"><span>{profile.role}</span><span>{profile.location}</span></div><div className="skills">{profile.skills.map(x=><span key={x}>{x}</span>)}</div></div></section>
-
- <section id="expertise" className="expertise-section reveal-on-scroll"><div className="expertise-heading"><span className="eyebrow">02 / WHAT I DO</span><h2>THE ART OF<br/><em>WHAT'S NEXT.</em></h2><p>Human-centered interfaces and emerging technology, thoughtfully built.</p></div><div className="expertise-grid"><a href="#projects" className="expertise-tile expertise-design"><div className="tile-meta"><span>01 / CORE DISCIPLINE</span><span>EXPLORE ↗</span></div><div className="tile-visual design-visual" aria-hidden="true"><div className="design-window"><i/><i/><i/><b/></div></div><div className="tile-copy"><h3>UI/UX<br/>DESIGN.</h3><p>Intuitive. Intentional. Human-first.</p></div></a><a href="/projects/spendwise-ai" className="expertise-tile expertise-ai"><div className="tile-meta"><span>02 / CORE DISCIPLINE</span><span>EXPLORE ↗</span></div><div className="tile-visual ai-visual" aria-hidden="true"><div className="ai-pulse"/><div className="ai-pulse inner"/></div><div className="tile-copy"><h3>ARTIFICIAL<br/>INTELLIGENCE.</h3><p>Explore what intelligent software can become.</p></div></a><div className="expertise-strip"><span>03 / SOFTWARE DEVELOPMENT</span><span>04 / GAME DESIGN</span><span>ENGINEERING × CREATIVITY</span></div></div></section>
- <section id="projects" className="section reveal-on-scroll"><p className="section-label">03 / SELECTED WORK</p><div className="section-main"><p className="eyebrow">SELECTED WORK / CREATIVE ENGINEERING</p><h2>Selected <em>work.</em></h2><p className="subtext">Real repositories. Real progress. A closer look at how ideas turn into systems and interfaces.</p><div className="project-list">{projects.map((p,i)=><article key={p.id} className="project showcase-card reveal-on-scroll"><div className={`project-image project-image-${i}`}><span className="showcase-label">PROJECT / {p.id}</span><strong>{p.title}</strong><span>{p.type}</span><div className="showcase-mark" aria-hidden="true">↗</div></div><div className="project-info"><div><span className="eyebrow">{p.type} / {p.year}</span><h3>{p.title}</h3><p>{p.description}</p><div className="skills">{p.stack.map(s=><span key={s}>{s}</span>)}</div></div><div className="project-actions">{p.id==="001"&&<a href="/projects/spendwise-ai" className="case-link">CASE STUDY ↗</a>}{p.url&&<a href={p.url} target="_blank" rel="noreferrer" className="case-link" aria-label={`Open ${p.title} on GitHub`}>GITHUB ↗</a>}</div></div></article>)}</div></div></section>
- <GitHubRepos username={profile.githubUsername}/>
- <section id="resume" className="section reveal-on-scroll"><p className="section-label">04 / RESUME</p><div className="section-main"><p className="eyebrow">CURRICULUM VITAE</p><h2>Experience in <em>focus.</em></h2><p className="subtext">A resume PDF can be added at public/resume.pdf. The download link should be enabled after uploading your real CV.</p><span className="disabled-action">CV PDF — COMING SOON</span></div></section>
- <section id="contact" className="section contact-section reveal-on-scroll"><p className="section-label">05 / CONTACT</p><div className="section-main"><p className="eyebrow">LET'S CONNECT</p><h2>Have a project<br/>in <em>mind?</em></h2><p className="subtext">Open to conversations, collaboration and opportunities. Find my work and reach out through GitHub.</p><div className="contact-actions">{profile.email&&<a href={`mailto:${profile.email}`} className="primary-action">SEND AN EMAIL ↗</a>}<a href={profile.github} target="_blank" rel="noreferrer" className="primary-action">CONNECT ON GITHUB ↗</a></div><div className="socials"><a href={profile.github} target="_blank" rel="noreferrer">GITHUB ↗</a>{profile.linkedin&&<a href={profile.linkedin} target="_blank" rel="noreferrer">LINKEDIN ↗</a>}</div></div></section></main>
- <footer><span>© {new Date().getFullYear()} KREV1®</span><a href="#top">BACK TO TOP ↑</a><span>BUILT WITH NEXT.JS</span></footer></>
+ const closeMenu=()=>setMenuOpen(false);
+ return <div className="k-minimal">
+  <header className="k-header">
+   <a className="k-logo" href="#top" onClick={closeMenu}>KREV1<span>®</span></a>
+   <span className="k-header-note">INDEPENDENT DIGITAL PORTFOLIO / 2026</span>
+   <button type="button" className="k-menu-button" aria-expanded={menuOpen} aria-controls="k-navigation" onClick={()=>setMenuOpen(!menuOpen)}>{menuOpen?"CLOSE −":"MENU +"}</button>
+   <nav id="k-navigation" className={menuOpen?"k-navigation k-navigation-open":"k-navigation"} aria-label="Main navigation">
+    <a href="#work" onClick={closeMenu}>WORK</a><a href="#about" onClick={closeMenu}>ABOUT</a><a href="#contact" onClick={closeMenu}>CONTACT</a><a href={profile.github} target="_blank" rel="noreferrer">GITHUB ↗</a>
+   </nav>
+  </header>
+  <main id="top">
+   <section className="k-hero" aria-labelledby="k-hero-title">
+    <div className="k-hero-index"><span>DESIGN × INTELLIGENCE</span><span>HCMC / VIETNAM</span></div>
+    <div className="k-hero-center"><p className="k-overline">COMPUTER SCIENCE / ARTIFICIAL INTELLIGENCE</p><h1 id="k-hero-title">BEYOND<br/>THE <span>INTERFACE.</span></h1><p className="k-hero-subtitle">Human-centered design. Intelligent engineering.</p></div>
+    <div className="k-hero-bottom"><span>UI/UX DESIGN — AI — SOFTWARE DEVELOPMENT</span><a href="#work">SCROLL TO EXPLORE ↓</a></div>
+   </section>
+   <section id="work" className="k-work">
+    <div className="k-section-heading"><span>01 / SELECTED WORK</span><span>FEATURED PROJECTS — 2026</span></div>
+    {projects.map((project,index)=><article className="k-project" key={project.id}>
+     <div className={"k-project-canvas k-project-canvas-"+index}>
+      <div className="k-project-canvas-top"><span>PROJECT / {project.id}</span><span>{project.type}</span></div>
+      <strong>{project.title}</strong>
+      <div className="k-project-canvas-bottom"><span>{project.year}</span><span>DESIGN / DEVELOPMENT</span></div>
+     </div>
+     <div className="k-project-details"><div><span className="k-number">0{index+1} — {project.type}</span><h2>{project.title}</h2><p>{project.description}</p></div><div className="k-project-links">{project.id==="001"&&<a href="/projects/spendwise-ai">CASE STUDY ↗</a>}{project.url&&<a href={project.url} target="_blank" rel="noreferrer">GITHUB ↗</a>}</div></div>
+    </article>)}
+   </section>
+   <section id="about" className="k-about">
+    <div className="k-section-heading"><span>02 / ABOUT</span><span>WHO I AM</span></div>
+    <div className="k-about-content"><h2>LESS,<br/><span>BUT BETTER.</span></h2><div className="k-about-description"><p>{profile.about}</p><div className="k-expertise-list"><div><span>01</span><strong>UI/UX DESIGN</strong></div><div><span>02</span><strong>ARTIFICIAL INTELLIGENCE</strong></div><div><span>03</span><strong>FULL-STACK DEVELOPMENT</strong></div><div><span>04</span><strong>GAME DESIGN</strong></div></div></div></div>
+   </section>
+   <section className="k-github"><GitHubRepos username={profile.githubUsername}/></section>
+   <section id="resume" className="k-resume"><div className="k-section-heading"><span>03 / RESUME</span><span>BACKGROUND</span></div><div className="k-simple-row"><span>Computer Science / Artificial Intelligence</span><span>CV AVAILABLE UPON REQUEST</span></div></section>
+   <section id="contact" className="k-contact"><div className="k-section-heading"><span>04 / CONTACT</span><span>LET'S CONNECT</span></div><p>HAVE SOMETHING<br/>IN MIND?</p><a href={profile.github} target="_blank" rel="noreferrer">FIND ME ON GITHUB ↗</a></section>
+  </main>
+  <footer className="k-footer"><span>KREV1® / {new Date().getFullYear()}</span><span>DESIGN × TECHNOLOGY</span><a href="#top">BACK TO TOP ↑</a></footer>
+ </div>;
 }
