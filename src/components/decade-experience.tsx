@@ -8,7 +8,7 @@ type Phase="locked"|"open"|"loaded"|"transforming"|"active"|"reopened"|"ejecting
 type Direction=-1|1;
 type Ability={label:string;type:"SKILL"|"TOOL"|"PROCESS";description:string};
 type CardDrag={id:string;x:number;y:number};
-type Gesture={x:number;y:number;direction?:Direction};
+type Gesture={x:number;y:number;side:Direction};
 const THRESHOLD_X=65;
 const THRESHOLD_Y=55;
 type Sfx="open"|"insert"|"henshin"|"ability"|"eject";
@@ -51,9 +51,9 @@ function Art({id}:{id:string}){
 function ProjectCard({id,index,disabled,onBegin,onMove,onEnd,onKeyboard}:{id:string;index:number;disabled:boolean;onBegin:(e:PointerEvent<HTMLButtonElement>,id:string)=>void;onMove:(e:PointerEvent<HTMLButtonElement>)=>void;onEnd:(e:PointerEvent<HTMLButtonElement>)=>void;onKeyboard:(id:string)=>void}){
  const p=projects.find(p=>p.id===id)!;
  return <button className={"ex-project-card ex-project-card-"+index} type="button" disabled={disabled} onPointerDown={e=>onBegin(e,id)} onPointerMove={onMove} onPointerUp={onEnd} onPointerCancel={onEnd} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();onKeyboard(id)}}} aria-label={p.title+" — drag vertically into the Driver slot"}>
-  <span className="ex-card-header"><b>K / {p.id}</b><span>PROJECT CARD</span></span>
-  <span className="ex-card-emblem" aria-hidden="true"><span className="ex-card-diagonal"/><b>{String(index+1).padStart(2,"0")}</b></span>
-  <strong>{p.title}</strong><span className="ex-card-footer"><span>{p.type}</span><span className="ex-barcode" aria-hidden="true"/></span>
+  <span className="ex-card-header"><b>KREV1 / {p.id}</b><span>RIDE / PROJECT</span></span>
+  <span className="ex-card-emblem" aria-hidden="true"><svg className="ex-card-sigil" viewBox="0 0 160 210" fill="none"><path d="M32 12L79 30L128 12L143 71L115 173L80 197L45 173L17 71Z" stroke="currentColor" strokeWidth="7"/><path d="M34 56L80 77L126 56M48 80L80 99L112 80M56 114L80 129L104 114" stroke="currentColor" strokeWidth="8"/><path d="M57 151L80 169L103 151" stroke="currentColor" strokeWidth="7"/></svg><b>{String(index+1).padStart(2,"0")}</b></span>
+  <strong>{p.title}</strong><span className="ex-card-footer"><span>{p.type}</span><span className="ex-barcode" aria-hidden="true"/></span><span className="ex-card-side-stripes" aria-hidden="true"/>
  </button>;
 }
 
@@ -62,7 +62,8 @@ export default function DecadeExperience(){
  const [openDirection,setOpenDirection]=useState<Direction|null>(null);
  const [projectId,setProjectId]=useState<string|null>(null);
  const [activeAbility,setActiveAbility]=useState<number|null>(null);
- const [gripOffset,setGripOffset]=useState(0);
+ const [gripMotion,setGripMotion]=useState<number|null>(null);
+ const [activeGrip,setActiveGrip]=useState<Direction|null>(null);
  const [cardDrag,setCardDrag]=useState<CardDrag|null>(null);
  const [slotLift,setSlotLift]=useState(0);
  const [cycle,setCycle]=useState(0);
@@ -89,26 +90,52 @@ export default function DecadeExperience(){
  const modules=projectId?abilities[projectId]||[]:[];
  const isOpen=phase==="open"||phase==="reopened"||phase==="loaded"||phase==="ejecting";
  const canInsert=phase==="open"&&!projectId;
+ const openProgress=gripMotion??(isOpen?1:0);
  const hasCard=Boolean(liveProject);
  
  useEffect(()=>{if(phase!=="transforming")return;const timer=window.setTimeout(()=>{setPhase("active");setActiveAbility(null)},1080);return()=>window.clearTimeout(timer)},[phase]);
  useEffect(()=>{if(phase!=="ejecting")return;const timer=window.setTimeout(()=>{setProjectId(null);setPhase("open");setSlotLift(0);setCycle(n=>n+1)},460);return()=>window.clearTimeout(timer)},[phase]);
- const beginOpen=(direction:Direction)=>{playSfx("open");setOpenDirection(direction);setPhase(phase==="active"?"reopened":"open");setActiveAbility(null);setCycle(n=>n+1)};
- const turnGrip=(direction:Direction)=>{
-  if(phase==="locked"||phase==="active"){beginOpen(direction);return;}
-  if(phase==="loaded"&&openDirection!==null&&direction===-openDirection){playSfx("henshin");setPhase("transforming");setCycle(n=>n+1);}
+ const beginOpen=(side:Direction)=>{playSfx("open");setOpenDirection(side);setPhase(phase==="active"?"reopened":"open");setActiveAbility(null);setCycle(n=>n+1)};
+ const closeAndHenshin=()=>{if(phase!=="loaded")return;playSfx("henshin");setPhase("transforming");setCycle(n=>n+1)};
+ const onGripDown=(e:PointerEvent<HTMLButtonElement>,side:Direction)=>{
+  if(phase!=="locked"&&phase!=="loaded"&&phase!=="active")return;
+  e.currentTarget.setPointerCapture(e.pointerId);
+  gripStart.current={x:e.clientX,y:e.clientY,side};
+  setActiveGrip(side);
+  setGripMotion(phase==="loaded"?1:0);
  };
- const onGripDown=(e:PointerEvent<HTMLButtonElement>)=>{if(phase!=="locked"&&phase!=="loaded"&&phase!=="active")return;e.currentTarget.setPointerCapture(e.pointerId);gripStart.current={x:e.clientX,y:e.clientY};setGripOffset(0)};
- const onGripMove=(e:PointerEvent<HTMLButtonElement>)=>{if(!gripStart.current)return;setGripOffset(Math.max(-105,Math.min(105,e.clientX-gripStart.current.x)))};
- const onGripEnd=(e:PointerEvent<HTMLButtonElement>)=>{const start=gripStart.current;gripStart.current=null;setGripOffset(0);if(!start)return;const dx=e.clientX-start.x;if(Math.abs(dx)>=THRESHOLD_X)turnGrip(dx>0?1:-1)};
- const onGripKey=(e:KeyboardEvent<HTMLButtonElement>)=>{if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight")return;e.preventDefault();turnGrip(e.key==="ArrowRight"?1:-1)};
+ const onGripMove=(e:PointerEvent<HTMLButtonElement>)=>{
+  const g=gripStart.current;if(!g)return;
+  const outward=(e.clientX-g.x)*g.side;
+  const travel=phase==="loaded"?-outward:outward;
+  const fraction=Math.max(0,Math.min(1,travel/94));
+  setGripMotion(phase==="loaded"?1-fraction:fraction);
+ };
+ const onGripEnd=(e:PointerEvent<HTMLButtonElement>)=>{
+  const g=gripStart.current;
+  gripStart.current=null;setGripMotion(null);setActiveGrip(null);
+  if(!g)return;
+  const outward=(e.clientX-g.x)*g.side;
+  const travel=phase==="loaded"?-outward:outward;
+  if(travel<THRESHOLD_X)return;
+  if(phase==="loaded")closeAndHenshin();
+  else if(phase==="locked"||phase==="active")beginOpen(g.side);
+ };
+ const onGripCancel=()=>{gripStart.current=null;setGripMotion(null);setActiveGrip(null)};
+ const onGripKey=(e:KeyboardEvent<HTMLButtonElement>,side:Direction)=>{
+  if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight")return;
+  e.preventDefault();
+  const arrow=e.key==="ArrowRight"?1:-1;
+  if(phase==="loaded"&&arrow===-side)closeAndHenshin();
+  else if((phase==="locked"||phase==="active")&&arrow===side)beginOpen(side);
+ };
  const insert=(id:string)=>{if(!canInsert)return;playSfx("insert");setProjectId(id);setPhase("loaded");setActiveAbility(null);setCycle(n=>n+1)};
  const onCardDown=(e:PointerEvent<HTMLButtonElement>,id:string)=>{if(!canInsert)return;e.currentTarget.setPointerCapture(e.pointerId);dragStart.current={id,x:e.clientX,y:e.clientY};setCardDrag({id,x:e.clientX,y:e.clientY})};
  const onCardMove=(e:PointerEvent<HTMLButtonElement>)=>{if(!dragStart.current)return;setCardDrag({...dragStart.current,x:e.clientX,y:e.clientY})};
  const onCardEnd=(e:PointerEvent<HTMLButtonElement>)=>{
   const start=dragStart.current;dragStart.current=null;setCardDrag(null);if(!start)return;
   const rect=slotRef.current?.getBoundingClientRect();
-  const inside=!!rect&&e.clientX>=rect.left-18&&e.clientX<=rect.right+18&&e.clientY>=rect.top-24&&e.clientY<=rect.bottom+24;
+  const inside=!!rect&&e.clientX>=rect.left-28&&e.clientX<=rect.right+28&&e.clientY>=rect.top-32&&e.clientY<=rect.bottom+32;
   if(inside&&e.clientY-start.y>50)insert(start.id);
  };
  const eject=()=>{if(phase!=="reopened")return;playSfx("eject");setPhase("ejecting");setSlotLift(0);setActiveAbility(null)};
@@ -132,9 +159,9 @@ export default function DecadeExperience(){
   <div className="ex-status" aria-live="polite">{instructions[phase]}</div>
   {(phase==="locked"||isOpen)&&<div className="ex-deck" aria-label="Project card deck"><div className="ex-deck-title"><span>PROJECT ARCHIVE</span><span>CHỌN THẺ → KÉO XUỐNG</span></div><div className="ex-card-row">{projects.map((p,i)=><ProjectCard key={p.id} id={p.id} index={i} disabled={!canInsert} onBegin={onCardDown} onMove={onCardMove} onEnd={onCardEnd} onKeyboard={insert}/>)}</div></div>}
   {(phase==="active"||phase==="transforming")&&liveProject&&<section className="ex-stage" aria-labelledby="ex-project-title"><div className="ex-stage-meta"><span>PROJECT / {liveProject.id}</span><span>2026 — ACTIVE FORM</span></div><div className="ex-stage-main"><div className="ex-stage-copy"><p className="ex-kicker">TRANSFORMATION COMPLETE / {liveProject.type}</p><h1 id="ex-project-title">{liveProject.title}</h1><p>{liveProject.description}</p><div className="ex-stage-links">{liveProject.url&&<a href={liveProject.url} target="_blank" rel="noreferrer">VIEW REPOSITORY ↗</a>}</div></div><Art id={liveProject.id}/></div><div className="ex-ability-area"><span className="ex-ability-label">ABILITY CARDS / CHỌN KỸ NĂNG ĐỂ KÍCH HOẠT</span><div className="ex-ability-row">{modules.map((m,i)=><button className={"ex-ability-card "+(activeAbility===i?"ex-ability-selected":"")} type="button" key={m.label} onClick={()=>{playSfx("ability");setActiveAbility(i)}} aria-pressed={activeAbility===i}><small>{m.type} / 0{i+1}</small><strong>{m.label}</strong></button>)}</div><div className="ex-ability-details" aria-live="polite">{activeAbility===null?<p>SELECT AN ABILITY CARD TO REVEAL TOOLS, SKILLS AND PROCESS.</p>:<><span>{modules[activeAbility].type} ACTIVATED</span><strong>{modules[activeAbility].label}</strong><p>{modules[activeAbility].description}</p></>}</div></div></section>}
-  <div className={"ex-driver-zone "+(phase==="active"?"ex-driver-docked":"")}><div className="ex-driver-caption"><span>DECADE / DEVICE 01</span><span>{phase==="loaded"?"CARD SET":isOpen?"DRIVER OPEN":phase==="active"?"ACTIVE":"DRIVER LOCKED"}</span></div><div className={"ex-device "+(isOpen?"ex-device-open":"")+(phase==="transforming"?" ex-device-transform":"") } key={phase==="transforming"?"henshin-"+cycle:"device"}><div className="ex-belt ex-belt-left" aria-hidden="true"/><div className="ex-mechanism"><div className="ex-mechanism-tracks" aria-hidden="true"><i/><i/><i/></div><div className="ex-rotating-reader" aria-hidden="true"><div className="ex-rotating-reader-ring"/><div className="ex-reader-cross"><i/><i/><i/><i/></div></div><div className="ex-gate ex-gate-left" aria-hidden="true"/><div className="ex-gate ex-gate-right" aria-hidden="true"/><div className="ex-slot-surround"><button ref={slotRef} type="button" className={"ex-slot "+(hasCard?"ex-slot-filled":"")} disabled={!(phase==="open"||phase==="reopened")} onPointerDown={onEjectDown} onPointerMove={onEjectMove} onPointerUp={onEjectEnd} onPointerCancel={onEjectEnd} onKeyDown={e=>{if(e.key==="ArrowUp"){e.preventDefault();eject()}}} aria-label={phase==="reopened"?"Swipe card upward to eject; press Arrow Up for keyboard":"Vertical card insertion slot"}><div className="ex-slot-rim"/>{liveProject?<div className="ex-slot-card" style={{transform:slotLift?"translateY("+slotLift+"px)":undefined}}><span>PROJECT / {liveProject.id}</span><strong>{liveProject.title}</strong><small>{phase==="reopened"?"↑ PULL OUT":phase==="loaded"?"READY":"ACTIVATED"}</small></div>:<span className="ex-slot-placeholder">↓<small>INSERT CARD</small></span>}</button></div><div className="ex-driver-core"><span>DECADE</span><div className="ex-core-emblem" aria-hidden="true"><span/></div><small>KREV1 / 2026</small></div><button className="ex-grip ex-grip-left" type="button" style={{"--ex-grip-offset":gripOffset+"px"} as CSSProperties} onPointerDown={onGripDown} onPointerMove={onGripMove} onPointerUp={onGripEnd} onPointerCancel={()=>{gripStart.current=null;setGripOffset(0)}} onKeyDown={onGripKey} disabled={phase==="open"||phase==="reopened"||phase==="transforming"} aria-label={phase==="loaded"?"Drag opposite opening direction to close and transform; ArrowLeft or ArrowRight on keyboard":"Drag left or right to open driver; ArrowLeft or ArrowRight on keyboard"}><span className="ex-grip-lines" aria-hidden="true">≡</span><span>PULL ◀ ▶</span></button><button className="ex-grip ex-grip-right" type="button" style={{"--ex-grip-offset":gripOffset+"px"} as CSSProperties} onPointerDown={onGripDown} onPointerMove={onGripMove} onPointerUp={onGripEnd} onPointerCancel={()=>{gripStart.current=null;setGripOffset(0)}} onKeyDown={onGripKey} disabled={phase==="open"||phase==="reopened"||phase==="transforming"} aria-label={phase==="loaded"?"Drag opposite opening direction to close and transform; ArrowLeft or ArrowRight on keyboard":"Drag left or right to open driver; ArrowLeft or ArrowRight on keyboard"}><span className="ex-grip-lines" aria-hidden="true">≡</span><span>DRAG ◀ ▶</span></button><div className="ex-scan" aria-hidden="true"/></div><div className="ex-belt ex-belt-right" aria-hidden="true"/></div><div className="ex-driver-hint">{phase==="loaded"?"REVERSE DIRECTION TO HENSHIN":phase==="reopened"?"SWIPE INSERTED CARD UP TO EJECT":phase==="active"?"DRAG THE HANDLE TO REOPEN":"DRAG HANDLE LEFT OR RIGHT / USE ARROW KEYS"}</div></div>
+  <div className={"ex-driver-zone "+(phase==="active"?"ex-driver-docked":"")}><div className="ex-driver-caption"><span>DECADE / DEVICE 01</span><span>{phase==="loaded"?"CARD SET":isOpen?"DRIVER OPEN":phase==="active"?"ACTIVE":"DRIVER LOCKED"}</span></div><div className={"ex-device "+(isOpen?"ex-device-open":"")+(phase==="transforming"?" ex-device-transform":"")+(activeGrip!==null?" ex-device-dragging":"")} style={{"--ex-open-p":openProgress} as CSSProperties} key={phase==="transforming"?"henshin-"+cycle:"device"}><div className="ex-belt ex-belt-left" aria-hidden="true"/><div className="ex-mechanism"><div className="ex-buckle-shell" aria-hidden="true"><svg viewBox="0 0 480 335" preserveAspectRatio="none"><path d="M88 9H392L454 61V274L392 326H88L26 274V61Z" fill="#D7CADB" stroke="#4A354E" strokeWidth="12"/><path d="M107 29H373L430 80V255L373 307H107L50 255V80Z" fill="#13101B" stroke="#FFFFFF" strokeWidth="5"/><path d="M108 41H146L100 88H67ZM372 41H334L380 88H413ZM108 296H146L100 249H67ZM372 296H334L380 249H413Z" fill="#A26C9D"/><path d="M88 155H131V180H88ZM349 155H392V180H349Z" fill="#FF42B2"/></svg></div><div className="ex-mechanism-tracks" aria-hidden="true"><i/><i/><i/></div><div className="ex-rotating-reader" aria-hidden="true"><div className="ex-rotating-reader-ring"/><div className="ex-reader-cross"><i/><i/><i/><i/></div><div className="ex-reader-rivet-markers"><span/><span/><span/><span/><span/><span/><span/><span/></div></div><div className="ex-gate ex-gate-left" aria-hidden="true"/><div className="ex-gate ex-gate-right" aria-hidden="true"/><div className="ex-slot-surround"><button ref={slotRef} type="button" className={"ex-slot "+(hasCard?"ex-slot-filled":"")} disabled={!(phase==="open"||phase==="reopened")} onPointerDown={onEjectDown} onPointerMove={onEjectMove} onPointerUp={onEjectEnd} onPointerCancel={onEjectEnd} onKeyDown={e=>{if(e.key==="ArrowUp"){e.preventDefault();eject()}}} aria-label={phase==="reopened"?"Swipe card upward to eject; press Arrow Up for keyboard":"Vertical card insertion slot"}><div className="ex-slot-rim"/>{liveProject?<div className="ex-slot-card" style={{transform:slotLift?"translateY("+slotLift+"px)":undefined}}><span>PROJECT / {liveProject.id}</span><strong>{liveProject.title}</strong><small>{phase==="reopened"?"↑ PULL OUT":phase==="loaded"?"READY":"ACTIVATED"}</small></div>:<span className="ex-slot-placeholder">↓<small>INSERT CARD</small></span>}</button></div><div className="ex-driver-core"><span>PROJECT / DRIVE</span><div className="ex-core-emblem" aria-hidden="true"><span/></div><small>KREV1 / SYSTEM 09</small></div><button className="ex-grip ex-grip-left" type="button" onPointerDown={e=>onGripDown(e,-1)} onPointerMove={onGripMove} onPointerUp={onGripEnd} onPointerCancel={onGripCancel} onKeyDown={e=>onGripKey(e,-1)} disabled={phase==="open"||phase==="reopened"||phase==="ejecting"||phase==="transforming"} aria-label={phase==="loaded"?"Push left handle inward to transform. Press Arrow Right":"Pull left handle outward to open. Press Arrow Left"}><span className="ex-grip-elements" aria-hidden="true"><i/><i/><i/></span><span className="ex-grip-label">◀ PULL</span></button><button className="ex-grip ex-grip-right" type="button" onPointerDown={e=>onGripDown(e,1)} onPointerMove={onGripMove} onPointerUp={onGripEnd} onPointerCancel={onGripCancel} onKeyDown={e=>onGripKey(e,1)} disabled={phase==="open"||phase==="reopened"||phase==="ejecting"||phase==="transforming"} aria-label={phase==="loaded"?"Push right handle inward to transform. Press Arrow Left":"Pull right handle outward to open. Press Arrow Right"}><span className="ex-grip-elements" aria-hidden="true"><i/><i/><i/></span><span className="ex-grip-label">PULL ▶</span></button><div className="ex-scan" aria-hidden="true"/></div><div className="ex-belt ex-belt-right" aria-hidden="true"/></div><div className="ex-driver-hint">{phase==="loaded"?"REVERSE DIRECTION TO HENSHIN":phase==="reopened"?"SWIPE INSERTED CARD UP TO EJECT":phase==="active"?"DRAG THE HANDLE TO REOPEN":"DRAG HANDLE LEFT OR RIGHT / USE ARROW KEYS"}</div></div>
   <footer className="ex-footer"><span>© 2026 KREV1 — ORIGINAL INTERACTIVE PORTFOLIO</span><span>INSPIRED BY CARD TRANSFORMATION SYSTEMS</span></footer>
-  {phase==="transforming"&&<div className="ex-henshin" aria-live="assertive"><div className="ex-henshin-rings"/><strong>HENSHIN</strong><span>PROJECT SYSTEM / ACTIVATING</span></div>}
+  {phase==="transforming"&&<div className="ex-henshin" aria-live="assertive"><div className="ex-henshin-stripes" aria-hidden="true">{Array.from({length:9},(_,i)=><i key={i}/>)}</div><div className="ex-henshin-rings"/><div className="ex-henshin-core"><span>RIDE / {liveProject?.id}</span><strong>HENSHIN</strong><b>{liveProject?.title}</b><span>PROJECT SYSTEM / ACTIVATING</span></div></div>}
   {cardDrag&&<div className="ex-card-ghost" style={{left:cardDrag.x,top:cardDrag.y}} aria-hidden="true"><span>PROJECT / {cardDrag.id}</span><strong>{projects.find(p=>p.id===cardDrag.id)?.title}</strong><span>↓ INSERT</span></div>}
  </main>;
 }
