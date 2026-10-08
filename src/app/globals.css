@@ -200,3 +200,23 @@
 @media(max-width:900px){.dd-layout{grid-template-columns:1fr}.dd-deck-list{grid-template-columns:repeat(3,minmax(0,1fr))}.dd-main-card{height:185px}.dd-main-card strong{font-size:21px}.dd-driver{min-height:380px}}
 @media(max-width:650px){.dd-section{padding:0 5vw 70px}.dd-section-top{font-size:8px}.dd-intro{padding:40px 0 50px}.dd-intro h2{font-size:clamp(55px,14vw,100px)}.dd-deck-list{grid-template-columns:1fr}.dd-main-card{height:140px}.dd-main-card strong{font-size:28px}.dd-driver{padding:18px;min-height:310px}.dd-driver-side{height:60px}.dd-driver-frame{height:210px;border-width:8px}.dd-driver-control{flex-wrap:wrap}.dd-sub-card{min-height:150px}.dd-detail-heading>strong{font-size:42px}}
 @media(prefers-reduced-motion:reduce){.dd-main-card,.dd-driver,.dd-sub-card{transition:none}}
+
+/* Phase 4: mechanical card insertion and Henshin motion */
+@media(prefers-reduced-motion:no-preference){
+.dd-driver-loaded .dd-inserted{animation:ddInsert .62s cubic-bezier(.16,.82,.21,1) both}
+.dd-driver-active .dd-driver-frame{animation:ddHenshin .85s cubic-bezier(.2,.7,.2,1)}
+.dd-driver-active .dd-transformation-flash{animation:ddFlash .85s ease-out both}
+.dd-driver-active .dd-driver-indicator{animation:ddBeacon 1.7s ease-in-out infinite}
+.dd-detail-heading,.dd-modules{animation:ddReveal .5s ease-out both}
+.dd-sub-active{animation:ddAbility .32s ease-out}
+.dd-module-panel{animation:ddReveal .35s ease-out both}
+@keyframes ddInsert{0%{opacity:0;transform:translateY(-85px) scale(.78) rotate(-9deg)}60%{opacity:1;transform:translateY(9px) scale(1.04)}100%{opacity:1;transform:none}}
+@keyframes ddHenshin{0%{transform:scale(1)}28%{transform:scale(.93) rotate(-2deg)}54%{transform:scale(1.07) rotate(2deg)}100%{transform:none}}
+@keyframes ddFlash{0%{opacity:0}35%{opacity:.85}100%{opacity:0}}
+@keyframes ddBeacon{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes ddReveal{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes ddAbility{0%{transform:translateY(-6px)}100%{transform:none}}
+}
+.dd-driver-frame{isolation:isolate}
+.dd-transformation-flash{position:absolute;inset:0;background:#ffd6ea;pointer-events:none;opacity:0;z-index:4;mix-blend-mode:screen}
+@media(prefers-reduced-motion:reduce){.dd-inserted,.dd-driver-frame,.dd-transformation-flash,.dd-driver-indicator,.dd-detail-heading,.dd-modules,.dd-sub-card,.dd-module-panel{animation:none!important;transition:none!important}}
