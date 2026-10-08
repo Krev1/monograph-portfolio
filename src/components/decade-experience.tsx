@@ -64,7 +64,7 @@ export default function DecadeExperience(){
  const slotRef=useRef<HTMLButtonElement|null>(null);
  const liveProject=projects.find(p=>p.id===projectId);
  const modules=projectId?abilities[projectId]||[]:[];
- const isOpen=phase==="open"||phase==="reopened";
+ const isOpen=phase==="open"||phase==="reopened"||phase==="loaded";
  const canInsert=phase==="open"&&!projectId;
  const hasCard=Boolean(liveProject);
  
