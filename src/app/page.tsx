@@ -1,2 +1,2 @@
-import Portfolio from "@/components/portfolio";
-export default function Home(){return <Portfolio/>}
+import DecadeExperience from "@/components/decade-experience";
+export default function Home(){return <DecadeExperience/>}
