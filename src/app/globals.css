@@ -44,3 +44,49 @@
 @keyframes exEjectCard{0%{transform:translateY(0);opacity:1}85%{transform:translateY(-115px);opacity:1}100%{transform:translateY(-150px);opacity:0}}
 @media(max-width:520px){.ex-header-actions{gap:9px}.ex-sound-toggle{font-size:8px;padding:7px}.ex-header-actions>a{font-size:8px}.ex-rotating-reader{width:176px;height:176px;margin:-88px 0 0 -88px}.ex-grip-left{left:1%}.ex-grip-right{right:1%}.ex-grip{width:79px;font-size:7px}}
 @media(prefers-reduced-motion:reduce){.ex-rotating-reader{transition:none}.ex-phase-ejecting .ex-slot-card{animation:none}}
+
+
+/* KREV1 DECADE: refined electromechanical assembly */
+.ex-device{--ex-open-p:0}
+.ex-buckle-shell{position:absolute;z-index:0;inset:-10px -12px;filter:drop-shadow(0 10px 15px #0008)}
+.ex-buckle-shell svg{height:100%;width:100%}
+.ex-belt{border-color:#aaa0af;border-bottom-color:#3a3140;background:repeating-linear-gradient(90deg,#29232d 0 14px,#8d7f94 14px 17px,#382c3f 17px 30px);box-shadow:inset 0 0 0 3px #0c0810,inset 0 0 15px #000}
+.ex-mechanism{background:linear-gradient(135deg,#d4c0d4,#53405a 23%,#17101d 40%,#a787ad 70%,#271a2b);clip-path:polygon(8% 0,92% 0,100% 16%,100% 84%,92% 100%,8% 100%,0 84%,0 16%)}
+.ex-mechanism:before{background:radial-gradient(circle at 50% 47%,#b35e96,#28152d 46%,#15101b 60%);inset:20px;z-index:0}
+.ex-rotating-reader{width:245px;height:245px;margin:-122.5px 0 0 -122.5px;border:10px solid #c0aac4;background:conic-gradient(from 0deg,#150e1b,#64436c,#120b16,#95749a,#120b16);box-shadow:inset 0 0 0 5px #180b20,inset 0 0 0 13px #c7aac7,0 0 0 7px #2a1c2f;transform:rotate(calc(var(--ex-open-p) * 90deg));transition:transform .55s cubic-bezier(.18,.75,.22,1)}
+.ex-device-dragging .ex-rotating-reader,.ex-device-dragging .ex-gate{transition:none}
+.ex-reader-rivet-markers{position:absolute;inset:0;pointer-events:none}
+.ex-reader-rivet-markers span{position:absolute;left:calc(50% - 3px);top:9px;width:6px;height:12px;background:#f5d9e7;transform-origin:3px 103px}
+.ex-reader-rivet-markers span:nth-child(1){transform:rotate(0deg)}.ex-reader-rivet-markers span:nth-child(2){transform:rotate(45deg)}.ex-reader-rivet-markers span:nth-child(3){transform:rotate(90deg)}.ex-reader-rivet-markers span:nth-child(4){transform:rotate(135deg)}.ex-reader-rivet-markers span:nth-child(5){transform:rotate(180deg)}.ex-reader-rivet-markers span:nth-child(6){transform:rotate(225deg)}.ex-reader-rivet-markers span:nth-child(7){transform:rotate(270deg)}.ex-reader-rivet-markers span:nth-child(8){transform:rotate(315deg)}
+.ex-gate-left{transform:translateX(calc(var(--ex-open-p) * -78%)) rotate(calc(var(--ex-open-p) * -8deg))}
+.ex-gate-right{transform:translateX(calc(var(--ex-open-p) * 78%)) rotate(calc(var(--ex-open-p) * 8deg))}
+.ex-device-open .ex-gate-left{transform:translateX(calc(var(--ex-open-p) * -78%)) rotate(calc(var(--ex-open-p) * -8deg))}
+.ex-device-open .ex-gate-right{transform:translateX(calc(var(--ex-open-p) * 78%)) rotate(calc(var(--ex-open-p) * 8deg))}
+.ex-driver-core{width:185px;height:185px;border:8px solid #1d1223;background:radial-gradient(circle at 50% 44%,#722758,#230e28 58%,#d4b4cf 60%,#1a1120 71%);box-shadow:0 0 0 3px #f0c8e4,inset 0 0 25px #ff51b285;opacity:calc(1 - var(--ex-open-p));transform:scale(calc(1 - var(--ex-open-p) * .34));pointer-events:none}
+.ex-driver-core>span{font-size:16px}
+.ex-core-emblem span{width:34px;height:32px;border:6px solid #ffabd8;transform:skew(-18deg);box-shadow:inset -11px 0 #a759f5,0 0 12px #ff40ab}
+.ex-grip{bottom:2px;width:113px;height:66px;border:3px solid #e3b2d2;background:linear-gradient(120deg,#f6d6e5 0,#765277 12%,#342137 28%,#201423 70%,#b68db3 90%,#edd3e3);color:#faf2fa;box-shadow:0 4px 0 #0c0810,0 0 0 4px #36203a,0 0 25px #ff52b055;display:flex;flex-direction:column;gap:3px;align-items:center;justify-content:center}
+.ex-grip:after{content:"";height:4px;left:8px;right:8px;position:absolute;bottom:7px;background:repeating-linear-gradient(90deg,#caa0c1 0 8px,#342139 8px 12px)}
+.ex-grip-elements{display:flex;gap:6px}.ex-grip-elements i{display:block;height:22px;width:8px;transform:skew(-12deg);border-left:2px solid #fbc7de;border-right:2px solid #ca67a5;background:#5c3359}
+.ex-grip-label{font:700 10px 'Barlow Condensed',sans-serif;letter-spacing:.18em}
+.ex-project-card{border:4px solid #e7cadf;background:linear-gradient(155deg,#f9d6eb 0 13%,#291128 13% 26%,#ba357f 27% 30%,#150a1c 30% 74%,#962b74 74% 80%,#f5d8e9 80%);outline:2px solid #ac497f;outline-offset:-13px;box-shadow:0 12px 20px #000b,0 0 0 2px #3c163d}
+.ex-project-card-1{filter:hue-rotate(23deg)}.ex-project-card-2{filter:hue-rotate(-12deg)}
+.ex-project-card>strong{background:#12091ad6;padding:7px 4px;margin:0 -4px;text-align:center;font-size:clamp(21px,2.7vw,34px)}
+.ex-card-emblem{inset:14% 15% 23%;color:#ff94c8}
+.ex-card-sigil{position:absolute;inset:0;width:100%;height:100%;filter:drop-shadow(0 0 9px #ff68af9c)}
+.ex-card-emblem:before,.ex-card-emblem:after{display:none}
+.ex-card-emblem b{position:relative;font-size:clamp(35px,4vw,60px);color:#fff2fa;text-shadow:0 0 8px #c73189}
+.ex-card-side-stripes{position:absolute;left:11px;top:18%;bottom:21%;width:8px;background:repeating-linear-gradient(0deg,#ff85bf 0 8px,transparent 8px 14px)}
+.ex-card-header,.ex-card-footer{color:#fff4fc;text-shadow:0 1px 4px #000}
+.ex-henshin{background:radial-gradient(circle,#531645 0,#100617e9 55%,#07040df7);animation:exFlash 1.08s both}
+.ex-henshin-core{z-index:2;display:flex;flex-direction:column;align-items:center;gap:10px;animation:exHenshinSnap 1s both}
+.ex-henshin-core span{font-size:11px;color:#ffc7df;letter-spacing:.25em}
+.ex-henshin-core strong{font:800 clamp(72px,16vw,240px)/.8 'Barlow Condensed',sans-serif;letter-spacing:.03em;color:white;text-shadow:0 0 14px #ff3ea5,0 0 90px #ff3ea5}
+.ex-henshin-core b{font:700 clamp(27px,5vw,80px) 'Barlow Condensed',sans-serif;color:#ff7bbd;letter-spacing:.13em}
+.ex-henshin-stripes{position:absolute;inset:0;display:flex;justify-content:space-around;overflow:hidden;opacity:.65}
+.ex-henshin-stripes i{width:10vw;height:160%;background:linear-gradient(#ff9ed72a,#ff3ea5ad,#5820ac7d);transform:translateY(-150%) skew(-18deg);animation:exBeam .8s ease-out both}
+.ex-henshin-stripes i:nth-child(2n){animation-delay:.08s}.ex-henshin-stripes i:nth-child(3n){animation-delay:.15s}
+@keyframes exBeam{to{transform:translateY(110%) skew(-18deg)}}
+@keyframes exHenshinSnap{0%{opacity:0;transform:scale(1.3)}25%{opacity:1;transform:scale(.92)}65%{transform:scale(1.04)}100%{opacity:1;transform:scale(1)}}
+@media(max-width:520px){.ex-rotating-reader{height:180px;width:180px;margin:-90px 0 0 -90px}.ex-reader-rivet-markers span{transform-origin:3px 72px}.ex-driver-core{width:136px;height:136px}.ex-grip{width:80px;height:51px;bottom:0}.ex-grip-elements i{height:13px;width:6px}.ex-grip-label{font-size:8px}.ex-buckle-shell{inset:-7px}.ex-project-card>strong{font-size:17px}.ex-card-emblem b{font-size:40px}}
+@media(prefers-reduced-motion:reduce){.ex-henshin-core,.ex-henshin-stripes i{animation:none!important}.ex-rotating-reader,.ex-gate{transition:none!important}}
