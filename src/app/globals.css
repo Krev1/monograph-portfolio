@@ -65,6 +65,8 @@ figure {
   --project-card-width: calc(var(--driver-width) * 236 / 940);
   --project-card-height: calc(var(--driver-width) * 344 / 940);
   --physical-card-travel: 344px;
+  --card-insert-duration: 620ms;
+  --card-entry-travel: 374px;
   --driver-width: min(720px, 94vw, max(360px, calc((94svh - 280px) / 0.83)));
   --driver-dock-height: calc(var(--driver-width) * 0.27766);
   position: relative;
@@ -324,6 +326,10 @@ figure {
   transform-origin: 500px 257px;
   transform: rotate(calc(var(--open) * -90deg));
   transition: transform 0.18s ease-out;
+  animation: lensRecognized 0.16s ease-out both;
+}
+.dx-lens-card-slide {
+  animation: lensCardPass var(--card-insert-duration) linear both;
 }
 .dx-lens-emblem {
   opacity: 0.9;
@@ -467,7 +473,7 @@ figure {
   pointer-events: none;
 }
 .dx-card-inserting .dx-card-motion {
-  animation: cardInsert 0.32s ease-out both;
+  animation: cardInsert var(--card-insert-duration) ease-out both;
 }
 .dx-card-ejecting .dx-card-motion {
   animation: cardEject 0.28s ease-in both;
@@ -561,6 +567,25 @@ figure {
 }
 .tap-controls button:disabled {
   opacity: 0.45;
+}
+.motion-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #7c5a8b;
+}
+.motion-control select {
+  min-height: 44px;
+  background: #291333;
+  color: var(--white);
+  border: 1px solid #92679e;
+  border-radius: 3px;
+  padding: 6px 9px;
+  font: inherit;
 }
 .experience-footer {
   position: absolute;
@@ -858,10 +883,30 @@ figure {
 }
 @keyframes cardInsert {
   from {
-    transform: translateX(calc(var(--physical-card-travel) * -1));
+    transform: translateX(calc(var(--card-entry-travel) * -1));
   }
   to {
     transform: translateX(0);
+  }
+}
+@keyframes lensCardPass {
+  0% {
+    opacity: 0;
+  }
+  12%,
+  74% {
+    opacity: 0.88;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes lensRecognized {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 @keyframes cardEject {
@@ -871,7 +916,7 @@ figure {
     );
   }
   to {
-    transform: translateX(calc((var(--physical-card-travel) + 12px) * -1));
+    transform: translateX(calc((var(--card-entry-travel) + 12px) * -1));
     opacity: 0;
   }
 }
@@ -1215,17 +1260,30 @@ figure {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *:before,
-  *:after {
+  .experience:not(.full-motion),
+  .experience:not(.full-motion) *,
+  .experience:not(.full-motion) *:before,
+  .experience:not(.full-motion) *:after {
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
-  .energy-ring,
-  .transformation-identity {
+  .experience:not(.full-motion) .energy-ring,
+  .experience:not(.full-motion) .transformation-identity {
     display: none;
   }
+}
+.experience.reduced-motion,
+.experience.reduced-motion *,
+.experience.reduced-motion *:before,
+.experience.reduced-motion *:after {
+  animation-duration: 0.001ms !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+.reduced-motion .energy-ring,
+.reduced-motion .transformation-identity {
+  display: none;
 }
 
 @media (max-height: 800px) and (min-width: 541px) {

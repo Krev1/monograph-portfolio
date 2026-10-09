@@ -37,6 +37,7 @@ Optional **Keyboard & tap controls** exposes equivalent operations one step at a
 - [Seated card, groove and circular lens specification](docs/CARD-READER-FIDELITY.md)
 - [Programming-language marks on the ivory face](docs/LANGUAGE-MARKS.md)
 - [Physical card proportions and two-part Driver](docs/CARD-DRIVER-PROPORTIONS.md)
+- [Fixed carrier branding and card passage under the lens](docs/CARRIER-BRANDING-LENS-ENTRY.md)
 - [Verification and delivery record](docs/VERIFICATION.md)
 - `src/lib/driver-machine.ts`: pure guarded transitions and run tokens
 - `src/lib/driver-geometry.ts`: scale-aware gestures and slot attraction

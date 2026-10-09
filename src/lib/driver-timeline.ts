@@ -1,4 +1,5 @@
 import { clamp } from "./driver-machine";
+export const CARD_INSERT_DURATION = 620;
 export const HENSHIN_DURATION = 1500;
 export function henshinFrame(elapsed: number, reduced = false) {
   if (reduced)

@@ -166,7 +166,7 @@ function DecadriverModel({
           {card && (
             <g
               id={ref("readerCard")}
-              transform={`translate(300 ${257 + DRIVER_DIMENSIONS.cardWidth / 2}) rotate(-90) scale(${DRIVER_DIMENSIONS.cardWidth / DRIVER_DIMENSIONS.artworkWidth})`}
+              transform={`translate(${DRIVER_DIMENSIONS.cardSeatX} ${257 + DRIVER_DIMENSIONS.cardWidth / 2}) rotate(-90) scale(${DRIVER_DIMENSIONS.cardWidth / DRIVER_DIMENSIONS.artworkWidth})`}
             >
               <CardArtwork project={card} />
             </g>
@@ -360,395 +360,435 @@ function DecadriverModel({
             />
             <use href={`#${ref("pods")}`} x="737" y="263" />
           </g>
-        </g>
-
-        <g className="dx-face-rotor dx-reader-unit" data-part="reader">
-          {card && cardPhase !== "seated" && (
-            <g
-              className={"dx-transient-card dx-card-" + cardPhase}
-              data-testid="transient-card"
-            >
-              <use className="dx-card-motion" href={`#${ref("readerCard")}`} />
-            </g>
-          )}
-          <path
-            d="M344 78H656L680 109Q708 175 714 231V283Q711 355 681 407L658 437H342L319 407Q289 355 286 283V231Q292 174 320 109Z"
-            fill="#10161d"
-            stroke="#0a1017"
-            strokeWidth="7"
-            transform="translate(0 6)"
-          />
-          <path
-            d="M344 78H656L680 109Q708 175 714 231V283Q711 355 681 407L658 437H342L319 407Q289 355 286 283V231Q292 174 320 109Z"
-            fill={paint("shell")}
-            stroke={paint("edge")}
-            strokeWidth="3"
-          />
-          <path
-            d="M355 85H645L665 112Q689 170 699 225H301Q311 170 335 112Z"
-            fill={paint("whiteEdge")}
-          />
-          <path
-            d="M355 85H645L665 112Q689 170 699 225H301Q311 170 335 112Z"
-            fill={paint("ivory")}
-            transform="translate(0 -3)"
-          />
-          <path
-            d="M301 298H699Q695 362 668 408L649 430H351L332 408Q305 362 301 298Z"
-            fill={paint("whiteEdge")}
-          />
-          <path
-            d="M303 297H697Q691 357 665 402L647 424H353L335 402Q309 357 303 297Z"
-            fill={paint("ivory")}
-          />
-          <path d="M288 228H712V294H288Z" fill="#090f13" />
-          <path d="M298 231H702M298 292H702" stroke="#4f5758" strokeWidth="1" />
-          <path d="M625 232H702V290H625Z" fill={paint("ribs")} />
-          {/* Only this aperture exposes the fully seated card behind the casing. */}
-          <g
-            className="dx-reader-window"
-            data-testid="reader-card-window"
-            data-card-id={card?.id}
-          >
+          <g className="dx-face-rotor dx-reader-unit" data-part="reader">
+            {card && cardPhase !== "seated" && (
+              <g
+                className={"dx-transient-card dx-card-" + cardPhase}
+                data-testid="transient-card"
+              >
+                <use
+                  className="dx-card-motion"
+                  href={`#${ref("readerCard")}`}
+                />
+              </g>
+            )}
             <path
-              d="M299 232H373V291H299Z"
-              fill="#05090c"
-              stroke="#717b7c"
-              strokeWidth="1.2"
+              d="M344 78H656L680 109Q708 175 714 231V283Q711 355 681 407L658 437H342L319 407Q289 355 286 283V231Q292 174 320 109Z"
+              fill="#10161d"
+              stroke="#0a1017"
+              strokeWidth="7"
+              transform="translate(0 6)"
             />
-            <g clipPath={paint("cardWindowClip")}>
-              <rect
-                x="302"
-                y="235"
-                width="65"
-                height="53"
-                fill={paint("cavity")}
-              />
-              {card && (
-                <g
-                  className={"dx-card-" + cardPhase}
-                  data-testid="seated-card"
-                  data-card-id={card.id}
-                >
-                  <use
-                    className="dx-card-motion"
-                    href={`#${ref("readerCard")}`}
-                  />
-                </g>
-              )}
-              <rect
-                x="302"
-                y="235"
-                width="65"
-                height="53"
-                fill={paint("windowShadow")}
-              />
-            </g>
             <path
-              d="M301 234H369M301 289H369"
-              stroke="#b5beba"
+              d="M344 78H656L680 109Q708 175 714 231V283Q711 355 681 407L658 437H342L319 407Q289 355 286 283V231Q292 174 320 109Z"
+              fill={paint("shell")}
+              stroke={paint("edge")}
+              strokeWidth="3"
+            />
+            <path
+              d="M355 85H645L665 112Q689 170 699 225H301Q311 170 335 112Z"
+              fill={paint("whiteEdge")}
+            />
+            <path
+              d="M355 85H645L665 112Q689 170 699 225H301Q311 170 335 112Z"
+              fill={paint("ivory")}
+              transform="translate(0 -3)"
+            />
+            <path
+              d="M301 298H699Q695 362 668 408L649 430H351L332 408Q305 362 301 298Z"
+              fill={paint("whiteEdge")}
+            />
+            <path
+              d="M303 297H697Q691 357 665 402L647 424H353L335 402Q309 357 303 297Z"
+              fill={paint("ivory")}
+            />
+            <path d="M288 228H712V294H288Z" fill="#090f13" />
+            <path
+              d="M298 231H702M298 292H702"
+              stroke="#4f5758"
               strokeWidth="1"
-              opacity=".65"
             />
-            <path d="M302 236V287" stroke="#010406" strokeWidth="3" />
-          </g>
-          <path
-            d="M348 82H651L667 110H333Z"
-            fill={paint("shell")}
-            stroke="#777f83"
-            strokeWidth="1.5"
-          />
-          <path
-            d="M351 84H649"
-            stroke="#d6d9d5"
-            strokeWidth="1.1"
-            opacity=".75"
-          />
-          <text
-            x="501"
-            y="102"
-            textAnchor="middle"
-            fontSize="13"
-            letterSpacing="11"
-            fontFamily="Arial,sans-serif"
-            fontWeight="600"
-            fill="#10181f"
-            stroke="#8e9696"
-            strokeWidth=".35"
-          >
-            KREV1
-          </text>
-          <path
-            d="M333 161Q382 97 464 117M536 117Q615 99 667 161"
-            fill="none"
-            stroke="#ffffff"
-            strokeWidth="2"
-            opacity=".45"
-          />
-          <path
-            d="M339 385Q382 417 443 414M557 414Q617 413 661 385"
-            fill="none"
-            stroke="#888f84"
-            strokeWidth="1"
-            opacity=".3"
-          />
-
-          {/* Left-edge slot reaches the top at the clockwise quarter-turn. */}
-          <g className="dx-card-slot">
+            <path d="M625 232H702V290H625Z" fill={paint("ribs")} />
+            {/* Only this aperture exposes the fully seated card behind the casing. */}
+            <g
+              className="dx-reader-window"
+              data-testid="reader-card-window"
+              data-card-id={card?.id}
+            >
+              <path
+                d="M299 232H373V291H299Z"
+                fill="#05090c"
+                stroke="#717b7c"
+                strokeWidth="1.2"
+              />
+              <g clipPath={paint("cardWindowClip")}>
+                <rect
+                  x="302"
+                  y="235"
+                  width="65"
+                  height="53"
+                  fill={paint("cavity")}
+                />
+                {card && (
+                  <g
+                    className={"dx-card-" + cardPhase}
+                    data-testid="seated-card"
+                    data-card-id={card.id}
+                  >
+                    <use
+                      className="dx-card-motion"
+                      href={`#${ref("readerCard")}`}
+                    />
+                  </g>
+                )}
+                <rect
+                  x="302"
+                  y="235"
+                  width="65"
+                  height="53"
+                  fill={paint("windowShadow")}
+                />
+              </g>
+              <path
+                d="M301 234H369M301 289H369"
+                stroke="#b5beba"
+                strokeWidth="1"
+                opacity=".65"
+              />
+              <path d="M302 236V287" stroke="#010406" strokeWidth="3" />
+            </g>
             <path
-              d="M287 184L304 190V325L287 332Z"
-              fill={paint("silver")}
-              stroke="#152027"
+              d="M333 161Q382 97 464 117M536 117Q615 99 667 161"
+              fill="none"
+              stroke="#ffffff"
               strokeWidth="2"
+              opacity=".45"
             />
-            <rect
-              x="290"
-              y="196"
-              width="7"
-              height="123"
-              rx="3"
-              fill="#02070a"
-            />
-            <path d="M299 197V318" stroke="#909b9c" strokeWidth="1" />
             <path
-              className="dx-slot-ready"
-              d="M293 202V313"
-              stroke="#dc95ba"
-              strokeWidth="2"
+              d="M339 385Q382 417 443 414M557 414Q617 413 661 385"
+              fill="none"
+              stroke="#888f84"
+              strokeWidth="1"
+              opacity=".3"
             />
-          </g>
 
-          <circle
-            cx="500"
-            cy="257"
-            r="133"
-            fill="#081017"
-            stroke="#747c7b"
-            strokeWidth="1.5"
-          />
-          <circle
-            cx="500"
-            cy="257"
-            r="128"
-            fill={paint("silver")}
-            stroke="#c4cecd"
-            strokeWidth="2"
-          />
-          {Array.from({ length: 19 }, (_, i) => (
+            {/* Left-edge slot reaches the top at the clockwise quarter-turn. */}
+            <g className="dx-card-slot">
+              <path
+                d="M287 184L304 190V325L287 332Z"
+                fill={paint("silver")}
+                stroke="#152027"
+                strokeWidth="2"
+              />
+              <rect
+                x="290"
+                y="196"
+                width="7"
+                height="123"
+                rx="3"
+                fill="#02070a"
+              />
+              <path d="M299 197V318" stroke="#909b9c" strokeWidth="1" />
+              <path
+                className="dx-slot-ready"
+                d="M293 202V313"
+                stroke="#dc95ba"
+                strokeWidth="2"
+              />
+            </g>
+
             <circle
-              key={i}
               cx="500"
               cy="257"
-              r={125 - i * 1.65}
-              fill="none"
-              stroke={i % 2 ? "#e9edec" : "#536b7b"}
-              strokeWidth=".55"
-              opacity={i % 3 ? ".21" : ".34"}
+              r="133"
+              fill="#081017"
+              stroke="#747c7b"
+              strokeWidth="1.5"
             />
-          ))}
-          <path
-            d="M399 181A127 127 0 0 1 543 138M381 283A122 122 0 0 0 452 370"
-            fill="none"
-            stroke="#f8faf0"
-            strokeWidth="2"
-            opacity=".55"
-          />
-          <path
-            d="M601 333A127 127 0 0 1 457 376"
-            fill="none"
-            stroke="#354b60"
-            strokeWidth="2"
-            opacity=".45"
-          />
-          <circle
-            cx="500"
-            cy="257"
-            r="94"
-            fill="#d4dedc"
-            stroke="#6d7f8b"
-            strokeWidth="1.5"
-          />
-          <circle
-            cx="500"
-            cy="257"
-            r="89"
-            fill="#111b25"
-            stroke="#7c8d97"
-            strokeWidth="2"
-          />
-          <circle cx="500" cy="257" r="85" fill={paint("lens")} />
-          <circle
-            className="dx-lens-lit"
-            cx="500"
-            cy="257"
-            r="83"
-            fill={paint("activated")}
-          />
-          {card && cardPhase !== "inserting" && (
-            <g clipPath={paint("lensClip")}>
+            <circle
+              cx="500"
+              cy="257"
+              r="128"
+              fill={paint("silver")}
+              stroke="#c4cecd"
+              strokeWidth="2"
+            />
+            {Array.from({ length: 19 }, (_, i) => (
+              <circle
+                key={i}
+                cx="500"
+                cy="257"
+                r={125 - i * 1.65}
+                fill="none"
+                stroke={i % 2 ? "#e9edec" : "#536b7b"}
+                strokeWidth=".55"
+                opacity={i % 3 ? ".21" : ".34"}
+              />
+            ))}
+            <path
+              d="M399 181A127 127 0 0 1 543 138M381 283A122 122 0 0 0 452 370"
+              fill="none"
+              stroke="#f8faf0"
+              strokeWidth="2"
+              opacity=".55"
+            />
+            <path
+              d="M601 333A127 127 0 0 1 457 376"
+              fill="none"
+              stroke="#354b60"
+              strokeWidth="2"
+              opacity=".45"
+            />
+            <circle
+              cx="500"
+              cy="257"
+              r="94"
+              fill="#d4dedc"
+              stroke="#6d7f8b"
+              strokeWidth="1.5"
+            />
+            <circle
+              cx="500"
+              cy="257"
+              r="89"
+              fill="#111b25"
+              stroke="#7c8d97"
+              strokeWidth="2"
+            />
+            <circle cx="500" cy="257" r="85" fill={paint("lens")} />
+            {card && cardPhase === "inserting" && (
               <g
-                className="dx-lens-display"
-                data-testid="lens-emblem"
+                className="dx-lens-card-slide dx-card-inserting"
+                clipPath={paint("lensClip")}
+                data-testid="lens-card-slide"
                 data-card-id={card.id}
-                data-emblem={card.mainCard.emblem}
-                color={card.mainCard.accent}
               >
+                <use
+                  className="dx-card-motion"
+                  href={`#${ref("readerCard")}`}
+                />
+                <circle
+                  cx="500"
+                  cy="257"
+                  r="81"
+                  fill="none"
+                  stroke="#02070b"
+                  strokeWidth="8"
+                  opacity=".55"
+                />
+              </g>
+            )}
+            <circle
+              className="dx-lens-lit"
+              cx="500"
+              cy="257"
+              r="83"
+              fill={paint("activated")}
+            />
+            {card && cardPhase !== "inserting" && (
+              <g clipPath={paint("lensClip")}>
                 <g
-                  className="dx-lens-emblem"
-                  transform="translate(444 201) scale(.7)"
+                  className="dx-lens-display"
+                  data-testid="lens-emblem"
+                  data-card-id={card.id}
+                  data-emblem={card.mainCard.emblem}
+                  color={card.mainCard.accent}
                 >
-                  <CardEmblemPaths emblem={card.mainCard.emblem} />
+                  <g
+                    className="dx-lens-emblem"
+                    transform="translate(444 201) scale(.7)"
+                  >
+                    <CardEmblemPaths emblem={card.mainCard.emblem} />
+                  </g>
                 </g>
               </g>
+            )}
+            <g clipPath={paint("lensClip")}>
+              <path
+                d="M434 197Q489 158 558 207L463 292L419 259Z"
+                fill={paint("reflection")}
+              />
+              <path
+                d="M531 180L565 197L443 335L429 319Z"
+                fill="#dae3dd"
+                opacity=".035"
+              />
+              <path
+                d="M432 212Q477 164 546 194"
+                fill="none"
+                stroke="#cad3cb"
+                strokeWidth="1.5"
+                opacity=".17"
+              />
+              <path
+                d="M540 219L551 214M547 217L543 226"
+                stroke="#ebefe5"
+                strokeWidth="1.3"
+                opacity=".48"
+              />
+              <circle cx="545" cy="219" r="2.4" fill="#e6eee0" opacity=".6" />
             </g>
-          )}
-          <g clipPath={paint("lensClip")}>
-            <path
-              d="M434 197Q489 158 558 207L463 292L419 259Z"
-              fill={paint("reflection")}
-            />
-            <path
-              d="M531 180L565 197L443 335L429 319Z"
-              fill="#dae3dd"
-              opacity=".035"
-            />
-            <path
-              d="M432 212Q477 164 546 194"
-              fill="none"
-              stroke="#cad3cb"
-              strokeWidth="1.5"
-              opacity=".17"
-            />
-            <path
-              d="M540 219L551 214M547 217L543 226"
-              stroke="#ebefe5"
-              strokeWidth="1.3"
-              opacity=".48"
-            />
-            <circle cx="545" cy="219" r="2.4" fill="#e6eee0" opacity=".6" />
-          </g>
-          <g className="dx-lens-scanner">
+            <g className="dx-lens-scanner">
+              <circle
+                cx="500"
+                cy="257"
+                r="74"
+                fill="none"
+                stroke="#b8668b"
+                strokeWidth="1.5"
+              />
+              <path
+                d="M444 208A74 74 0 0 1 566 224"
+                stroke="#efb5d0"
+                fill="none"
+                strokeWidth="2"
+              />
+            </g>
             <circle
               cx="500"
               cy="257"
-              r="74"
+              r="85"
               fill="none"
-              stroke="#b8668b"
+              stroke="#becbc7"
+              strokeWidth=".8"
+              opacity=".3"
+            />
+
+            <g className="dx-status-jewel">
+              <path
+                d="M485 132V122Q485 107 500 107Q515 107 515 122V132Z"
+                fill="#10181c"
+                stroke="#b8c4b7"
+                strokeWidth="2"
+              />
+              <path
+                d="M489 130V122Q489 111 500 111Q511 111 511 122V130Z"
+                fill={paint("jewel")}
+              />
+              <path
+                d="M493 118L499 113L505 118L500 128Z"
+                fill="#7ada87"
+                opacity=".28"
+              />
+              <path
+                d="M491 120Q491 114 497 114"
+                stroke="#e9ffe3"
+                strokeWidth="2"
+                strokeLinecap="round"
+                opacity=".85"
+              />
+            </g>
+            {marks.map((mark) => (
+              <g
+                key={mark.name}
+                className="dx-language-mark"
+                data-language={mark.name}
+                transform={`translate(${mark.x} ${mark.y})`}
+              >
+                <title>{mark.name}</title>
+                {mark.badge === "square" ? (
+                  <rect
+                    x="-12"
+                    y="-12"
+                    width="24"
+                    height="24"
+                    rx="1"
+                    fill="#18211f"
+                  />
+                ) : mark.badge === "hex" ? (
+                  <path
+                    d="M0-13 15-6.5V6.5L0 13-15 6.5V-6.5Z"
+                    fill="none"
+                    stroke="#18211f"
+                    strokeWidth="1.5"
+                  />
+                ) : mark.badge === "gear" ? (
+                  <>
+                    <circle
+                      r="12"
+                      fill="none"
+                      stroke="#18211f"
+                      strokeWidth="3"
+                      strokeDasharray="2.1 2.1"
+                    />
+                    <circle
+                      r="9.5"
+                      fill="none"
+                      stroke="#18211f"
+                      strokeWidth="1"
+                    />
+                  </>
+                ) : mark.badge === "outline" ? (
+                  <rect
+                    x="-13"
+                    y="-10"
+                    width="26"
+                    height="20"
+                    rx="3"
+                    fill="none"
+                    stroke="#18211f"
+                    strokeWidth="1.1"
+                  />
+                ) : null}
+                <text
+                  x="0"
+                  y="4"
+                  textAnchor="middle"
+                  fontFamily="Arial,Helvetica,sans-serif"
+                  fontWeight="800"
+                  fontSize={
+                    mark.label.length > 2
+                      ? 9.5
+                      : mark.badge === "gear"
+                        ? 10
+                        : 12
+                  }
+                  letterSpacing={mark.label === "JAVA" ? ".5" : "-.6"}
+                  fill={mark.badge === "square" ? "#f5f2e7" : "#18211f"}
+                >
+                  {mark.label}
+                </text>
+              </g>
+            ))}
+            <use href={`#${ref("screw")}`} x="329" y="116" />
+            <use href={`#${ref("screw")}`} x="671" y="116" />
+            <use href={`#${ref("screw")}`} x="330" y="400" />
+            <use href={`#${ref("screw")}`} x="670" y="400" />
+          </g>
+          {/* Fixed foreground lip of the carrier; the reader moves underneath. */}
+          <g className="dx-carrier-brand" data-testid="carrier-brand">
+            <path
+              d="M348 66H651L667 94H333Z"
+              fill="#090f15"
+              transform="translate(0 2)"
+            />
+            <path
+              d="M348 66H651L667 94H333Z"
+              fill={paint("shell")}
+              stroke="#777f83"
               strokeWidth="1.5"
             />
             <path
-              d="M444 208A74 74 0 0 1 566 224"
-              stroke="#efb5d0"
-              fill="none"
-              strokeWidth="2"
+              d="M351 68H649"
+              stroke="#d6d9d5"
+              strokeWidth="1.1"
+              opacity=".75"
             />
-          </g>
-          <circle
-            cx="500"
-            cy="257"
-            r="85"
-            fill="none"
-            stroke="#becbc7"
-            strokeWidth=".8"
-            opacity=".3"
-          />
-
-          <g className="dx-status-jewel">
-            <path
-              d="M485 132V122Q485 107 500 107Q515 107 515 122V132Z"
-              fill="#10181c"
-              stroke="#b8c4b7"
-              strokeWidth="2"
-            />
-            <path
-              d="M489 130V122Q489 111 500 111Q511 111 511 122V130Z"
-              fill={paint("jewel")}
-            />
-            <path
-              d="M493 118L499 113L505 118L500 128Z"
-              fill="#7ada87"
-              opacity=".28"
-            />
-            <path
-              d="M491 120Q491 114 497 114"
-              stroke="#e9ffe3"
-              strokeWidth="2"
-              strokeLinecap="round"
-              opacity=".85"
-            />
-          </g>
-          {marks.map((mark) => (
-            <g
-              key={mark.name}
-              className="dx-language-mark"
-              data-language={mark.name}
-              transform={`translate(${mark.x} ${mark.y})`}
+            <text
+              x="501"
+              y="86"
+              textAnchor="middle"
+              fontSize="13"
+              letterSpacing="11"
+              fontFamily="Arial,sans-serif"
+              fontWeight="600"
+              fill="#c4cccc"
+              stroke="#111920"
+              strokeWidth=".55"
             >
-              <title>{mark.name}</title>
-              {mark.badge === "square" ? (
-                <rect
-                  x="-12"
-                  y="-12"
-                  width="24"
-                  height="24"
-                  rx="1"
-                  fill="#18211f"
-                />
-              ) : mark.badge === "hex" ? (
-                <path
-                  d="M0-13 15-6.5V6.5L0 13-15 6.5V-6.5Z"
-                  fill="none"
-                  stroke="#18211f"
-                  strokeWidth="1.5"
-                />
-              ) : mark.badge === "gear" ? (
-                <>
-                  <circle
-                    r="12"
-                    fill="none"
-                    stroke="#18211f"
-                    strokeWidth="3"
-                    strokeDasharray="2.1 2.1"
-                  />
-                  <circle
-                    r="9.5"
-                    fill="none"
-                    stroke="#18211f"
-                    strokeWidth="1"
-                  />
-                </>
-              ) : mark.badge === "outline" ? (
-                <rect
-                  x="-13"
-                  y="-10"
-                  width="26"
-                  height="20"
-                  rx="3"
-                  fill="none"
-                  stroke="#18211f"
-                  strokeWidth="1.1"
-                />
-              ) : null}
-              <text
-                x="0"
-                y="4"
-                textAnchor="middle"
-                fontFamily="Arial,Helvetica,sans-serif"
-                fontWeight="800"
-                fontSize={
-                  mark.label.length > 2 ? 9.5 : mark.badge === "gear" ? 10 : 12
-                }
-                letterSpacing={mark.label === "JAVA" ? ".5" : "-.6"}
-                fill={mark.badge === "square" ? "#f5f2e7" : "#18211f"}
-              >
-                {mark.label}
-              </text>
-            </g>
-          ))}
-          <use href={`#${ref("screw")}`} x="329" y="116" />
-          <use href={`#${ref("screw")}`} x="671" y="116" />
-          <use href={`#${ref("screw")}`} x="330" y="400" />
-          <use href={`#${ref("screw")}`} x="670" y="400" />
+              KREV1
+            </text>
+          </g>
         </g>
       </svg>
     </div>

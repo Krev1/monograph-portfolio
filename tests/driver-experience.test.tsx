@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import DecadeExperience from "../src/components/decade-experience";
+import { CARD_INSERT_DURATION } from "../src/lib/driver-timeline";
 const advance = async (time: number) => {
   await act(async () => {
     await vi.advanceTimersByTimeAsync(time);
@@ -17,7 +18,7 @@ async function open() {
 async function load() {
   await open();
   fireEvent.click(card());
-  await advance(320);
+  await advance(CARD_INSERT_DURATION);
 }
 beforeEach(() => {
   vi.useFakeTimers();
@@ -48,7 +49,7 @@ describe("Controller integration", () => {
     expect(state()).toBe("open");
     fireEvent.click(card(), { detail: 1 });
     expect(state()).toBe("inserting");
-    await advance(320);
+    await advance(CARD_INSERT_DURATION);
     fireEvent.click(screen.getByRole("button", { name: "Push handles in" }));
     await advance(180);
     expect(screen.queryByTestId("project-stage")).toBeNull();
@@ -153,7 +154,7 @@ describe("Controller integration", () => {
     });
     fireEvent.pointerUp(project, { pointerId: 1, clientX: 450, clientY: 470 });
     expect(state()).toBe("inserting");
-    await advance(320);
+    await advance(CARD_INSERT_DURATION);
     expect(state()).toBe("loaded");
   });
   it("wrong closing direction and lost capture keep the same loaded card", async () => {
@@ -190,7 +191,7 @@ describe("Controller integration", () => {
     await advance(280);
     expect(state()).toBe("open");
     fireEvent.click(card("LEARN"));
-    await advance(320);
+    await advance(CARD_INSERT_DURATION);
     fireEvent.keyDown(left(), { key: "ArrowRight" });
     await advance(180);
     await advance(1500);
@@ -229,6 +230,47 @@ describe("Controller integration", () => {
 });
 
 describe("Recessed card reader", () => {
+  it("allows full lens motion on a reduced-motion device without skipping the reading state", async () => {
+    vi.mocked(window.matchMedia).mockImplementation(
+      () =>
+        ({
+          matches: true,
+          addEventListener: () => {},
+          removeEventListener: () => {},
+        }) as unknown as MediaQueryList,
+    );
+    render(<DecadeExperience />);
+    expect(
+      document.querySelector("main")!.classList.contains("reduced-motion"),
+    ).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: /KEYBOARD & TAP/ }));
+    const animation = screen.getByRole("combobox", { name: "Animation" });
+    fireEvent.change(animation, { target: { value: "full" } });
+    expect(
+      document.querySelector("main")!.classList.contains("full-motion"),
+    ).toBe(true);
+    expect(
+      document.querySelector("main")!.classList.contains("reduced-motion"),
+    ).toBe(false);
+    await open();
+    fireEvent.click(card());
+    await advance(CARD_INSERT_DURATION / 2);
+    expect(state()).toBe("inserting");
+    expect(
+      screen.getByTestId("lens-card-slide").getAttribute("data-card-id"),
+    ).toBe("001");
+    expect(screen.queryByTestId("project-stage")).toBeNull();
+    await advance(CARD_INSERT_DURATION / 2);
+    expect(state()).toBe("loaded");
+    expect(screen.queryByTestId("lens-card-slide")).toBeNull();
+    expect(screen.getByTestId("lens-emblem").getAttribute("data-emblem")).toBe(
+      "ledger",
+    );
+    fireEvent.change(animation, { target: { value: "reduced" } });
+    expect(
+      document.querySelector("main")!.classList.contains("reduced-motion"),
+    ).toBe(true);
+  });
   it.each([
     ["SPENDWISE AI", "001", "ledger"],
     ["LEARN", "002", "brackets"],
@@ -243,7 +285,17 @@ describe("Recessed card reader", () => {
       expect(state()).toBe("inserting");
       expect(screen.queryByTestId("lens-emblem")).toBeNull();
       expect(screen.getByTestId("transient-card")).toBeTruthy();
-      await advance(320);
+      expect(
+        screen.getByTestId("lens-card-slide").getAttribute("data-card-id"),
+      ).toBe(id);
+      await advance(CARD_INSERT_DURATION - 1);
+      expect(state()).toBe("inserting");
+      expect(screen.queryByTestId("lens-emblem")).toBeNull();
+      expect(screen.queryByTestId("project-stage")).toBeNull();
+      fireEvent.keyDown(left(), { key: "ArrowRight" });
+      expect(state()).toBe("inserting");
+      await advance(1);
+      expect(screen.queryByTestId("lens-card-slide")).toBeNull();
       expect(screen.queryByTestId("transient-card")).toBeNull();
       expect(
         screen.getByTestId("reader-card-window").getAttribute("data-card-id"),

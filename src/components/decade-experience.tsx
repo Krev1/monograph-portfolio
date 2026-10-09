@@ -12,7 +12,11 @@ import {
   SNAP_THRESHOLD,
   validDrop,
 } from "@/lib/driver-geometry";
-import { henshinFrame, HENSHIN_DURATION } from "@/lib/driver-timeline";
+import {
+  henshinFrame,
+  HENSHIN_DURATION,
+  CARD_INSERT_DURATION,
+} from "@/lib/driver-timeline";
 import DecadriverModel from "./decadriver-model";
 import ProjectStage from "./project-stage";
 import { CardArtwork } from "./card-artwork";
@@ -86,7 +90,12 @@ export default function DecadeExperience() {
   const [tapControls, setTapControls] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [notice, setNotice] = useState("");
-  const reduced = useReducedMotion();
+  const deviceReduced = useReducedMotion();
+  const [motionMode, setMotionMode] = useState<"auto" | "full" | "reduced">(
+    "auto",
+  );
+  const reduced =
+    motionMode === "reduced" || (motionMode === "auto" && deviceReduced);
   const lease = useRef<Lease | null>(null);
   const modelRef = useRef(model);
   modelRef.current = model;
@@ -187,7 +196,7 @@ export default function DecadeExperience() {
       : transforming
         ? HENSHIN_DURATION
         : model.state === "inserting"
-          ? 320
+          ? CARD_INSERT_DURATION
           : model.state === "ejecting"
             ? 280
             : 180;
@@ -547,6 +556,8 @@ export default function DecadeExperience() {
   const cardScale =
     sceneWidth === null ? null : sceneWidth / DRIVER_DIMENSIONS.viewportWidth;
   const experienceStyle = {
+    "--card-insert-duration": `${CARD_INSERT_DURATION}ms`,
+    "--card-entry-travel": `${DRIVER_DIMENSIONS.cardHeight + DRIVER_DIMENSIONS.cardSeatX - DRIVER_DIMENSIONS.cardEntryX}px`,
     "--project-card-width":
       cardScale === null
         ? undefined
@@ -568,7 +579,10 @@ export default function DecadeExperience() {
   return (
     <main
       className={
-        "experience state-" + model.state + (reduced ? " reduced-motion" : "")
+        "experience state-" +
+        model.state +
+        (reduced ? " reduced-motion" : "") +
+        (motionMode === "full" ? " full-motion" : "")
       }
       data-state={model.state}
       style={experienceStyle}
@@ -854,6 +868,21 @@ export default function DecadeExperience() {
         </p>
         {tapControls && (
           <div className="tap-controls" id="tap-controls">
+            <label className="motion-control">
+              Animation
+              <select
+                value={motionMode}
+                onChange={(event) => {
+                  const mode = event.currentTarget.value;
+                  if (mode === "auto" || mode === "full" || mode === "reduced")
+                    setMotionMode(mode);
+                }}
+              >
+                <option value="auto">Device setting</option>
+                <option value="full">Full motion</option>
+                <option value="reduced">Reduced motion</option>
+              </select>
+            </label>
             <p>
               Same sequence, one step at a time. Use the cards above to insert
               after opening.

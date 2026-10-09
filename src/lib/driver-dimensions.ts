@@ -4,6 +4,8 @@ export const DRIVER_DIMENSIONS = {
   viewportHeight: 435,
   cardWidth: 236,
   cardHeight: 344,
+  cardSeatX: 330,
+  cardEntryX: 300,
   artworkWidth: 118,
   artworkHeight: 172,
 } as const;
