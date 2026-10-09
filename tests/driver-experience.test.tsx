@@ -304,3 +304,106 @@ describe("Recessed card reader", () => {
     );
   });
 });
+
+describe("Physical card scale", () => {
+  it("preserves the card's original position and proportions when picked up", async () => {
+    render(<DecadeExperience />);
+    await open();
+    const project = card();
+    vi.spyOn(project, "getBoundingClientRect").mockReturnValue({
+      left: 100,
+      top: 200,
+      right: 218,
+      bottom: 372,
+      width: 118,
+      height: 172,
+    } as DOMRect);
+    fireEvent.pointerDown(project, {
+      pointerId: 1,
+      clientX: 130,
+      clientY: 245,
+    });
+    const ghost = document.querySelector<HTMLDivElement>(".drag-card")!;
+    expect(ghost.style.left).toBe("159px");
+    expect(ghost.style.top).toBe("372px");
+    expect(ghost.querySelector("svg")!.getAttribute("viewBox")).toBe(
+      "0 0 118 172",
+    );
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(state()).toBe("open");
+  });
+  it.each([470, 940])(
+    "keeps extracted card travel equal to pointer travel at scene width %s",
+    async (width) => {
+      render(<DecadeExperience />);
+      await load();
+      const scene = screen.getByTestId("driver-scene");
+      vi.spyOn(scene, "getBoundingClientRect").mockReturnValue({
+        width,
+      } as DOMRect);
+      const slot = screen.getByRole("button", { name: /Eject loaded/ });
+      fireEvent.pointerDown(slot, { pointerId: 1, clientY: 450 });
+      fireEvent.pointerMove(slot, { pointerId: 1, clientY: 410 });
+      const pull = Number(scene.style.getPropertyValue("--card-pull"));
+      const fullTravel = parseFloat(
+        document
+          .querySelector("main")!
+          .style.getPropertyValue("--physical-card-travel"),
+      );
+      expect((pull * fullTravel * width) / 940).toBeCloseTo(40);
+      fireEvent.pointerCancel(slot, { pointerId: 1 });
+      expect(state()).toBe("loaded");
+      expect(
+        screen.getByTestId("lens-emblem").getAttribute("data-card-id"),
+      ).toBe("001");
+    },
+  );
+  it("rescales all cards and cancels a held gesture when the scene resizes, then disconnects on unmount", async () => {
+    let resized:
+      ((entries: { contentRect: { width: number } }[]) => void) | undefined;
+    const observe = vi.fn(),
+      disconnect = vi.fn();
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(callback: typeof resized) {
+          resized = callback;
+        }
+        observe = observe;
+        disconnect = disconnect;
+      },
+    );
+    try {
+      const view = render(<DecadeExperience />);
+      const scene = screen.getByTestId("driver-scene");
+      expect(observe).toHaveBeenCalledWith(scene);
+      act(() => resized!([{ contentRect: { width: 940 } }]));
+      const main = document.querySelector("main")!;
+      expect(main.style.getPropertyValue("--project-card-width")).toBe("236px");
+      expect(main.style.getPropertyValue("--project-card-height")).toBe(
+        "344px",
+      );
+      await open();
+      fireEvent.pointerDown(card(), {
+        pointerId: 1,
+        clientX: 100,
+        clientY: 200,
+      });
+      expect(state()).toBe("cardDragging");
+      expect(
+        document.querySelector(".drag-card svg")!.getAttribute("viewBox"),
+      ).toBe(card().querySelector("svg")!.getAttribute("viewBox"));
+      act(() => resized!([{ contentRect: { width: 470 } }]));
+      expect(state()).toBe("open");
+      expect(document.querySelector(".drag-card")).toBeNull();
+      expect(main.style.getPropertyValue("--project-card-width")).toBe("118px");
+      expect(main.style.getPropertyValue("--project-card-height")).toBe(
+        "172px",
+      );
+      view.unmount();
+      expect(disconnect).toHaveBeenCalledOnce();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});

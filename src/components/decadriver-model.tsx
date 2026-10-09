@@ -3,6 +3,8 @@
 import { memo, useId } from "react";
 import type { PortfolioProject } from "@/data/driver-projects";
 import { CardEmblemPaths } from "./card-emblem";
+import { CardArtwork } from "./card-artwork";
+import { DRIVER_DIMENSIONS } from "@/lib/driver-dimensions";
 
 // Original hardware: photograph-informed proportions and typographic language marks.
 const marks = [
@@ -36,7 +38,7 @@ function DecadriverModel({
     >
       <svg
         className="dx-svg"
-        viewBox="30 40 940 435"
+        viewBox={`30 40 ${DRIVER_DIMENSIONS.viewportWidth} ${DRIVER_DIMENSIONS.viewportHeight}`}
         xmlns="http://www.w3.org/2000/svg"
         role="presentation"
       >
@@ -164,69 +166,9 @@ function DecadriverModel({
           {card && (
             <g
               id={ref("readerCard")}
-              transform="translate(300 315) rotate(-90)"
+              transform={`translate(300 ${257 + DRIVER_DIMENSIONS.cardWidth / 2}) rotate(-90) scale(${DRIVER_DIMENSIONS.cardWidth / DRIVER_DIMENSIONS.artworkWidth})`}
             >
-              <rect
-                width="116"
-                height="170"
-                rx="5"
-                fill="#141019"
-                stroke="#d3c4d0"
-                strokeWidth="1.5"
-              />
-              <rect
-                x="4"
-                y="4"
-                width="108"
-                height="11"
-                rx="2"
-                fill={card.mainCard.accent}
-              />
-              <path
-                d="M7 20H109M7 153H109"
-                stroke={card.mainCard.accent}
-                strokeWidth="1.2"
-              />
-              <path
-                d="M3 24H10V28H3ZM3 32H13V36H3ZM3 42H10V44H3ZM3 50H13V54H3ZM3 60H10V64H3ZM3 73H13V77H3ZM3 83H10V87H3ZM3 94H13V97H3ZM3 108H10V112H3Z"
-                fill="#ccc2c9"
-              />
-              <g
-                transform="translate(18 30) scale(.5)"
-                color={card.mainCard.accent}
-              >
-                <CardEmblemPaths emblem={card.mainCard.emblem} />
-              </g>
-              <text
-                x="17"
-                y="28"
-                fill="#f3dae8"
-                fontFamily="Arial,sans-serif"
-                fontSize="7"
-                letterSpacing="2"
-              >
-                K / {card.id}
-              </text>
-              <text
-                x="16"
-                y="139"
-                fill="#f3dae8"
-                fontFamily="Arial,sans-serif"
-                fontSize="8"
-                fontWeight="700"
-              >
-                {card.title === "KREV1 PORTFOLIO" ? "KREV1" : card.title}
-              </text>
-              <text
-                x="16"
-                y="164"
-                fill={card.mainCard.accent}
-                fontFamily="Arial,sans-serif"
-                fontSize="5"
-                letterSpacing="1"
-              >
-                {card.mainCard.code}
-              </text>
+              <CardArtwork project={card} />
             </g>
           )}
           <g id={ref("screw")}>
@@ -348,69 +290,79 @@ function DecadriverModel({
         </defs>
 
         <ellipse cx="500" cy="454" rx="318" ry="14" fill="#000" opacity=".35" />
-        <path
-          d="M94 237H906V290H94Z"
-          fill={paint("rail")}
-          stroke="#0d151e"
-          strokeWidth="4"
-        />
-        <path
-          d="M103 242H897M103 286H897"
-          stroke="#a2aab0"
-          strokeWidth="2"
-          opacity=".6"
-        />
-        {Array.from({ length: 26 }, (_, i) => (
+        <g className="dx-carrier" data-part="carrier">
           <path
-            key={i}
-            d={`M${121 + i * 30} 247V280`}
-            stroke="#101820"
+            d="M94 237H906V290H94Z"
+            fill={paint("rail")}
+            stroke="#0d151e"
             strokeWidth="4"
           />
-        ))}
-        <path
-          d="M327 99L352 79H648L675 100V407L649 438H351L325 407Z"
-          fill={paint("shell")}
-          stroke="#0e151c"
-          strokeWidth="7"
-        />
-        <circle
-          cx="500"
-          cy="257"
-          r="160"
-          fill="#171e24"
-          stroke="#667079"
-          strokeWidth="3"
-        />
-        <circle cx="500" cy="257" r="153" fill={paint("ribs")} />
+          <path
+            d="M103 242H897M103 286H897"
+            stroke="#a2aab0"
+            strokeWidth="2"
+            opacity=".6"
+          />
+          {Array.from({ length: 26 }, (_, i) => (
+            <path
+              key={i}
+              d={`M${121 + i * 30} 247V280`}
+              stroke="#101820"
+              strokeWidth="4"
+            />
+          ))}
+          <path
+            d="M348 112H652L683 134L706 195L723 228V294L704 355L679 393L652 416H348L321 393L296 355L277 294V228L294 195L317 134Z"
+            fill={paint("shell")}
+            stroke="#0e151c"
+            strokeWidth="7"
+          />
+          <circle
+            cx="500"
+            cy="257"
+            r="160"
+            fill="#171e24"
+            stroke="#667079"
+            strokeWidth="3"
+          />
+          <circle cx="500" cy="257" r="153" fill={paint("ribs")} />
 
-        <g className="dx-mechanical-left">
-          <path
-            d="M283 220H376V304H283Z"
-            fill={paint("ribs")}
-            stroke="#151c24"
-            strokeWidth="4"
-          />
-          <path d="M295 224H370M295 301H370" stroke="#7e898e" strokeWidth="2" />
-          <use href={`#${ref("grip")}`} />
-          <use href={`#${ref("pods")}`} x="165" y="263" />
-        </g>
-        <g className="dx-mechanical-right">
-          <path
-            d="M624 220H717V304H624Z"
-            fill={paint("ribs")}
-            stroke="#151c24"
-            strokeWidth="4"
-          />
-          <path d="M630 224H705M630 301H705" stroke="#7e898e" strokeWidth="2" />
-          <use
-            href={`#${ref("grip")}`}
-            transform="translate(1000 0) scale(-1 1)"
-          />
-          <use href={`#${ref("pods")}`} x="737" y="263" />
+          <g className="dx-mechanical-left">
+            <path
+              d="M283 220H376V304H283Z"
+              fill={paint("ribs")}
+              stroke="#151c24"
+              strokeWidth="4"
+            />
+            <path
+              d="M295 224H370M295 301H370"
+              stroke="#7e898e"
+              strokeWidth="2"
+            />
+            <use href={`#${ref("grip")}`} />
+            <use href={`#${ref("pods")}`} x="165" y="263" />
+          </g>
+          <g className="dx-mechanical-right">
+            <path
+              d="M624 220H717V304H624Z"
+              fill={paint("ribs")}
+              stroke="#151c24"
+              strokeWidth="4"
+            />
+            <path
+              d="M630 224H705M630 301H705"
+              stroke="#7e898e"
+              strokeWidth="2"
+            />
+            <use
+              href={`#${ref("grip")}`}
+              transform="translate(1000 0) scale(-1 1)"
+            />
+            <use href={`#${ref("pods")}`} x="737" y="263" />
+          </g>
         </g>
 
-        <g className="dx-face-rotor">
+        <g className="dx-face-rotor dx-reader-unit" data-part="reader">
           {card && cardPhase !== "seated" && (
             <g
               className={"dx-transient-card dx-card-" + cardPhase}

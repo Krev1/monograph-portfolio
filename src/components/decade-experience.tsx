@@ -15,7 +15,8 @@ import {
 import { henshinFrame, HENSHIN_DURATION } from "@/lib/driver-timeline";
 import DecadriverModel from "./decadriver-model";
 import ProjectStage from "./project-stage";
-import { CardEmblem } from "./card-emblem";
+import { CardArtwork } from "./card-artwork";
+import { DRIVER_DIMENSIONS } from "@/lib/driver-dimensions";
 
 type Lease = { pointerId: number; target: HTMLButtonElement } & (
   | {
@@ -25,8 +26,18 @@ type Lease = { pointerId: number; target: HTMLButtonElement } & (
       closing: boolean;
       travel: number;
     }
-  | { kind: "card"; x: number; y: number; previousX: number; cardId: ProjectId }
-  | { kind: "eject"; y: number; travel: number }
+  | {
+      kind: "card";
+      x: number;
+      y: number;
+      previousX: number;
+      cardId: ProjectId;
+      anchorX: number;
+      anchorY: number;
+      width: number;
+      height: number;
+    }
+  | { kind: "eject"; y: number; travel: number; scale: number }
 );
 type Ghost = {
   cardId: ProjectId;
@@ -45,22 +56,13 @@ const tones: Record<Sound, number[]> = {
 };
 function CardFace({ project }: { project: PortfolioProject }) {
   return (
-    <>
-      <span className="card-top">
-        <b>K / {project.id}</b>
-        <span>PROJECT CARD</span>
-      </span>
-      <span className="card-emblem">
-        <CardEmblem emblem={project.mainCard.emblem} />
-      </span>
-      <strong>
-        {project.title === "KREV1 PORTFOLIO" ? "KREV1" : project.title}
-      </strong>
-      <span className="card-bottom">
-        <span>{project.mainCard.code}</span>
-        <i aria-hidden="true" />
-      </span>
-    </>
+    <svg
+      className="card-artwork"
+      viewBox={`0 0 ${DRIVER_DIMENSIONS.artworkWidth} ${DRIVER_DIMENSIONS.artworkHeight}`}
+      aria-hidden="true"
+    >
+      <CardArtwork project={project} />
+    </svg>
   );
 }
 function useReducedMotion() {
@@ -89,6 +91,8 @@ export default function DecadeExperience() {
   const modelRef = useRef(model);
   modelRef.current = model;
   const sceneRef = useRef<HTMLDivElement>(null);
+  const [sceneWidth, setSceneWidth] = useState<number | null>(null);
+  const measuredWidth = useRef<number | null>(null);
   const slotRef = useRef<HTMLButtonElement>(null);
   const leftRef = useRef<HTMLButtonElement>(null);
   const firstCardRef = useRef<HTMLButtonElement>(null);
@@ -96,6 +100,28 @@ export default function DecadeExperience() {
   const audioRef = useRef<AudioContext | null>(null);
   const previousState = useRef(model.state);
   const soundedRun = useRef(-1);
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+    const resize = (width: number) => {
+      if (width > 0 && measuredWidth.current !== width) {
+        measuredWidth.current = width;
+        if (lease.current) cancelRef.current();
+        setSceneWidth(width);
+      }
+    };
+    resize(scene.offsetWidth);
+    if (typeof ResizeObserver === "undefined") {
+      const fallback = () => resize(scene.offsetWidth);
+      window.addEventListener("resize", fallback);
+      return () => window.removeEventListener("resize", fallback);
+    }
+    const observer = new ResizeObserver((entries) => {
+      resize(entries[0]?.contentRect.width ?? scene.offsetWidth);
+    });
+    observer.observe(scene);
+    return () => observer.disconnect();
+  }, []);
   const selected = driverProjects.find(
     (project) => project.id === model.cardId,
   );
@@ -222,6 +248,18 @@ export default function DecadeExperience() {
       (previous === "reopening" ? slotRef : leftRef).current?.focus({
         preventScroll: true,
       });
+    if (model.state === "open" || model.state === "loaded") {
+      const bottom = sceneRef.current?.getBoundingClientRect().bottom ?? 0;
+      if (
+        bottom > window.innerHeight ||
+        (firstCardRef.current?.getBoundingClientRect().top ?? 0) < 0
+      ) {
+        window.scrollTo({
+          top: Math.max(0, window.scrollY + bottom - window.innerHeight + 16),
+          behavior: "instant",
+        });
+      }
+    }
     if (model.state === "active") {
       window.scrollTo({ top: 0, behavior: "instant" });
       headingRef.current?.focus({ preventScroll: true });
@@ -317,6 +355,12 @@ export default function DecadeExperience() {
       event.isPrimary === false
     )
       return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const scale = (sceneWidth ?? 650) / DRIVER_DIMENSIONS.viewportWidth;
+    const width = bounds.width || DRIVER_DIMENSIONS.cardWidth * scale;
+    const height = bounds.height || DRIVER_DIMENSIONS.cardHeight * scale;
+    const anchorX = bounds.width ? event.clientX - bounds.left : width / 2;
+    const anchorY = bounds.height ? event.clientY - bounds.top : height;
     capture(event, {
       kind: "card",
       pointerId: event.pointerId,
@@ -325,11 +369,15 @@ export default function DecadeExperience() {
       x: event.clientX,
       y: event.clientY,
       previousX: event.clientX,
+      anchorX,
+      anchorY,
+      width,
+      height,
     });
     setGhost({
       cardId,
-      x: event.clientX,
-      y: event.clientY,
+      x: event.clientX + width / 2 - anchorX,
+      y: event.clientY + height - anchorY,
       tilt: 0,
       aligned: false,
     });
@@ -343,15 +391,16 @@ export default function DecadeExperience() {
       event.isPrimary === false
     )
       return;
+    const scale =
+      (sceneRef.current?.getBoundingClientRect().width || 650) /
+      DRIVER_DIMENSIONS.viewportWidth;
     capture(event, {
       kind: "eject",
       pointerId: event.pointerId,
       target: event.currentTarget,
       y: event.clientY,
-      travel: Math.max(
-        35,
-        (slotRef.current?.getBoundingClientRect().width ?? 90) * 0.8,
-      ),
+      scale,
+      travel: Math.max(35, DRIVER_DIMENSIONS.cardHeight * scale * 0.6),
     });
     dispatch({ type: "EJECT_START" });
   }
@@ -371,16 +420,32 @@ export default function DecadeExperience() {
         openness: held.closing ? 1 - progress : progress,
       });
     } else if (held.kind === "card") {
+      const slot = slotRef.current?.getBoundingClientRect() ?? null;
       const attraction = attractCard(
         { x: event.clientX, y: event.clientY },
-        slotRef.current?.getBoundingClientRect() ?? null,
+        slot,
         held.previousX,
       );
-      setGhost({ cardId: held.cardId, ...attraction });
+      const bottom = attraction.y + held.height - held.anchorY;
+      setGhost({
+        cardId: held.cardId,
+        ...attraction,
+        x: attraction.aligned
+          ? attraction.x
+          : attraction.x + held.width / 2 - held.anchorX,
+        y: attraction.aligned && slot ? Math.min(bottom, slot.top) : bottom,
+      });
       held.previousX = event.clientX;
     } else
       setLift(
-        Math.max(0, Math.min(1.5, (held.y - event.clientY) / held.travel)),
+        Math.max(
+          0,
+          Math.min(
+            1.5,
+            (held.y - event.clientY) /
+              (held.scale * DRIVER_DIMENSIONS.cardHeight),
+          ),
+        ),
       );
   }
   function end(event: PointerEvent<HTMLButtonElement>) {
@@ -479,6 +544,19 @@ export default function DecadeExperience() {
     "--scan": model.state === "transforming" ? frame.scan : 0,
     "--card-pull": lift,
   } as CSSProperties;
+  const cardScale =
+    sceneWidth === null ? null : sceneWidth / DRIVER_DIMENSIONS.viewportWidth;
+  const experienceStyle = {
+    "--project-card-width":
+      cardScale === null
+        ? undefined
+        : `${cardScale * DRIVER_DIMENSIONS.cardWidth}px`,
+    "--project-card-height":
+      cardScale === null
+        ? undefined
+        : `${cardScale * DRIVER_DIMENSIONS.cardHeight}px`,
+    "--physical-card-travel": `${DRIVER_DIMENSIONS.cardHeight}px`,
+  } as CSSProperties;
   const pointerHandlers = {
     onPointerMove: move,
     onPointerUp: end,
@@ -493,6 +571,7 @@ export default function DecadeExperience() {
         "experience state-" + model.state + (reduced ? " reduced-motion" : "")
       }
       data-state={model.state}
+      style={experienceStyle}
     >
       <header className="experience-header">
         <a className="wordmark" href="/" aria-label="KREV1 home">

@@ -119,3 +119,29 @@ L01/L02: final desktop closed screenshot shows all nine language labels. Conserv
 L03: the open reader rotates all marks clockwise with the ivory shell. Inserting KREV1 still produces the centered upright monogram, with card 003 enclosed and no external transient card in the loaded state. Open and closed screenshots were saved from the final local production build; no browser console warnings/errors were observed.
 
 L04: strict TypeScript and production build pass; route JavaScript is 14.8 kB / 118 kB first load. No dependency, external logo image or runtime request was added. Existing mechanical tests run in exact-revision CI; no redundant decorative-mark unit tests were introduced. Remote delivery results are recorded in the accompanying report.
+
+## Card proportions / two-part construction — 2026-10-09
+
+Specified before editing in `docs/CARD-DRIVER-PROPORTIONS.md`, against `6b18cb3fdbe3cb14a37bb531d79b7b797d3aa7a4`. The user directed the video study to 1:15–1:50. At approximately 1:17 the grip carrier is shown without the front reader; at approximately 1:42 detached ivory reading units are shown separately. Bandai's ver.2 specification supplies the 59:86 card aspect ratio and approximate 59/202 card-to-body width calibration, with the version distinction recorded in the specification.
+
+The deck, pointer ghost and reader now share `CardArtwork` and a typed 236×344 physical plane. The same scene scale determines all card dimensions. Pickup preserves the actual pointer anchor; alignment holds the card at the reader entrance before insertion. Extraction converts screen movement to the reader coordinate system. Resize cancels a held gesture before updating the physical scale; the observer disconnects on unmount. The rear carrier and front reader are separate drawing groups. Wider graphite carrier shoulders expose the mounting layer when the ivory reader rotates. The accepted recessed aperture, central project symbol and nine language marks are retained.
+
+**Local gates:** all 35 regression tests pass, including original card position at pickup, two screen scales for exact extraction travel, resize cancellation, shared artwork and observer cleanup. Strict TypeScript and production build pass: 15.7 kB route / 118 kB first-load JavaScript. No rendering dependency or external asset was added. React review confirms stable instance IDs, memoized hardware, cleaned-up observer/listeners, retained pointer ownership/run-token guards and native keyboard/tap controls.
+
+**Final production browser flow:** native desktop handle opening, downward SpendWise insertion, inward closure, Henshin, keyboard reopening and native upward extraction completed successfully. Reading showed ledger in the lens and no external card once loaded; completed extraction cleared both card and lens. At 390×844 native insertion of card 003 produced the monogram. At 320×568 keyboard closure preserved it; the active stage ends at 400.8 px and the hardware starts at 428.8 px, with document height 568 px. No console warnings/errors were observed.
+
+| Viewport | Card W×H (CSS px) | Deck bottom → carrier caption top | Horizontal overflow |
+| --- | --- | --- | --- |
+| 1440×900 | 171.2×249.5 | 484.5 → 505.4 | None |
+| 1280×720 | 120.0×174.9 | 366.9 → 430.6 | None |
+| 768×1024 | 180.8×263.5 | 498.5 → 532.7 | None |
+| 390×844 | 97.9×142.7 | 360.7 → 464.3 | None |
+| 320×760 | 80.3×117.1 | 335.1 → 430.3 | None |
+| 390×640 | 97.9×142.7 | 332.7 → 340.7 | None |
+| 320×568 | 80.3×117.1 | 307.1 → 315.1 | None |
+
+At these sizes, measured card width differs from `actual scene width × 236/940` by less than 0.02 CSS px; aspect ratio rounds to 0.6860. The open aperture hit target remains 57.6×44 px at 320×568 and 70.2×44 px at 390×844.
+
+Landscape 844×390 keeps a 360px scene and 90.4×131.7px cards rather than shrinking them below usable size. The initial page scrolls vertically (590px document); opening brings both cards and Driver into view. A complete keyboard cycle was exercised. In the final active layout, stage bottom is 263.4 px, hardware top 273.4 px, handle targets 50.4×56.0 px and document height 390 px. The project stage scrolls independently above the larger landscape dock.
+
+P01/P02: measured common scale, reused SVG artwork, pickup/extraction/resize tests and native pointer cycle. P03: fixed carrier transform `none`, reader quarter-turn matrix and open screenshot. P04: full regression suite and actual read/reopen/extract flow. P05: responsive table, short-screen scrolling and bounded stage. P06: local gates; remote results are recorded in the delivered report. Measurements are frontend calibration, not exact physical toy dimensions or certification on real touchscreen hardware.
