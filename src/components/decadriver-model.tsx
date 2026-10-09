@@ -4,29 +4,18 @@ import { memo, useId } from "react";
 import type { PortfolioProject } from "@/data/driver-projects";
 import { CardEmblemPaths } from "./card-emblem";
 
-// Original hardware: photograph-informed proportions, original glyphs and branding.
+// Original hardware: photograph-informed proportions and typographic language marks.
 const marks = [
-  { x: 421, y: 136, glyph: 0, angle: -22 },
-  { x: 579, y: 136, glyph: 1, angle: 22 },
-  { x: 649, y: 211, glyph: 2, angle: 60 },
-  { x: 644, y: 326, glyph: 3, angle: 112 },
-  { x: 574, y: 388, glyph: 4, angle: 151 },
-  { x: 500, y: 415, glyph: 5, angle: 180 },
-  { x: 425, y: 387, glyph: 6, angle: 210 },
-  { x: 355, y: 325, glyph: 7, angle: 248 },
-  { x: 352, y: 211, glyph: 8, angle: 292 },
-];
-const glyphPaths = [
-  "M-3-13C9-10 12 0 5 9L0 13L-7 8C-15 0-10-10-3-13ZM-2-6L-6 2L1 8L7 0L2-5L1 2L-2 4Z",
-  "M-2-13H2V-4L12-9L14-5L5 1L13 8L10 11L2 5V14H-2V5L-10 11L-13 8L-5 1L-14-5L-12-9L-2-4Z",
-  "M-11-9H-3V-14H2V-4H-7V7H5V0H0V-4H10V11H-11ZM5-12H12V-5H8V-8H5Z",
-  "M-12-10L-3-5L0-13L3-5L12-10L7 0L14 7L4 6L0 13L-4 6L-14 7L-7 0ZM-3-2V5H3V-2Z",
-  "M-13-4L-2-12L11-7L5-3L14 4L3 3L8 12L-3 7L-7 13L-8 3L-14 4L-8-2ZM-2-5L-5 0L1 4L5 0Z",
-  "M0-13L12-3L6 10L0 14L-6 10L-12-3ZM-5-3L0 5L5-3L0 0Z",
-  "M-2-13C11-13 17 1 7 11L3 5C9-2 4-8-2-6ZM-11-6L-5-2C-9 5-2 10 3 6L7 12C-6 20-20 5-11-6ZM-1-3L4 0L0 5L-5 1Z",
-  "M-12-10L-4-6L0-14L4-6L12-10L10-2L15 1L9 4L11 11L4 8L0 14L-4 8L-11 11L-9 4L-15 1L-10-2ZM-4-2V4H4V-2Z",
-  "M-10-11H-5V5L0 10L5 5V-11H10V8L0 16L-10 8ZM-2-14H2V1H-2Z",
-];
+  { x: 416, y: 128, name: "Python", label: "PY", badge: "outline" },
+  { x: 584, y: 128, name: "JavaScript", label: "JS", badge: "square" },
+  { x: 658, y: 211, name: "TypeScript", label: "TS", badge: "square" },
+  { x: 647, y: 331, name: "C++", label: "C++", badge: "hex" },
+  { x: 579, y: 396, name: "C#", label: "C#", badge: "hex" },
+  { x: 500, y: 415, name: "Java", label: "JAVA", badge: "word" },
+  { x: 425, y: 387, name: "Go", label: "GO", badge: "word" },
+  { x: 355, y: 325, name: "Rust", label: "RS", badge: "gear" },
+  { x: 352, y: 211, name: "Kotlin", label: "KT", badge: "outline" },
+] as const;
 
 function DecadriverModel({
   activated = false,
@@ -737,13 +726,72 @@ function DecadriverModel({
             />
           </g>
           {marks.map((mark) => (
-            <path
-              key={mark.glyph}
-              d={glyphPaths[mark.glyph]}
-              fill="#141b1b"
-              fillRule="evenodd"
-              transform={`translate(${mark.x} ${mark.y}) rotate(${mark.angle}) scale(.72)`}
-            />
+            <g
+              key={mark.name}
+              className="dx-language-mark"
+              data-language={mark.name}
+              transform={`translate(${mark.x} ${mark.y})`}
+            >
+              <title>{mark.name}</title>
+              {mark.badge === "square" ? (
+                <rect
+                  x="-12"
+                  y="-12"
+                  width="24"
+                  height="24"
+                  rx="1"
+                  fill="#18211f"
+                />
+              ) : mark.badge === "hex" ? (
+                <path
+                  d="M0-13 15-6.5V6.5L0 13-15 6.5V-6.5Z"
+                  fill="none"
+                  stroke="#18211f"
+                  strokeWidth="1.5"
+                />
+              ) : mark.badge === "gear" ? (
+                <>
+                  <circle
+                    r="12"
+                    fill="none"
+                    stroke="#18211f"
+                    strokeWidth="3"
+                    strokeDasharray="2.1 2.1"
+                  />
+                  <circle
+                    r="9.5"
+                    fill="none"
+                    stroke="#18211f"
+                    strokeWidth="1"
+                  />
+                </>
+              ) : mark.badge === "outline" ? (
+                <rect
+                  x="-13"
+                  y="-10"
+                  width="26"
+                  height="20"
+                  rx="3"
+                  fill="none"
+                  stroke="#18211f"
+                  strokeWidth="1.1"
+                />
+              ) : null}
+              <text
+                x="0"
+                y="4"
+                textAnchor="middle"
+                fontFamily="Arial,Helvetica,sans-serif"
+                fontWeight="800"
+                fontSize={
+                  mark.label.length > 2 ? 9.5 : mark.badge === "gear" ? 10 : 12
+                }
+                letterSpacing={mark.label === "JAVA" ? ".5" : "-.6"}
+                fill={mark.badge === "square" ? "#f5f2e7" : "#18211f"}
+              >
+                {mark.label}
+              </text>
+            </g>
           ))}
           <use href={`#${ref("screw")}`} x="329" y="116" />
           <use href={`#${ref("screw")}`} x="671" y="116" />

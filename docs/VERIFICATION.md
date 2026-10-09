@@ -109,3 +109,13 @@ The full original card is drawn behind the casing. Its only seated view is a 65�
 Active 320×568: stage bottom 400.8 px, hardware top 428.8 px; the card strip stays inside the left groove and the symbol remains centered. The disabled ejection target is scaled with the active dock; reopening restores its measured open size before extraction is enabled.
 
 C01/C03: open and closed production screenshots plus clipped SVG aperture. C02/C04: three-card controller tests and native switching/extraction. C05/C06: native gestures, regression tests and target measurements above. C07: local gates; exact revision remote checks are recorded in the delivered report. Physical touchscreen devices and other browser engines remain outside the observed test coverage.
+
+## Programming-language face marks — 2026-10-09
+
+Specified before editing in `docs/LANGUAGE-MARKS.md`, against `447117d990ef22485eaf897501ccdc12cf3ae9c4`. All nine old face glyphs are replaced with original typographic marks: PY, JS, TS, C++, C#, JAVA, GO, RS and KT. Compact outline, square, hexagonal and gear badges use dark graphite and ivory. Labels occupy the same nine face regions; small outward adjustments reserve room around the silver annulus. This decorative motif does not add proficiency claims or change evidenced project abilities.
+
+L01/L02: final desktop closed screenshot shows all nine language labels. Conservative distance from each label's screen bounding box to the outer annulus is positive: 4.0–16.5 CSS px at 1440×900. C# was moved outward during QA and now clears it by 7.6 px. The 320×568 closed view has all nine marks and no horizontal overflow; these small hardware inscriptions are decorative rather than primary reading content.
+
+L03: the open reader rotates all marks clockwise with the ivory shell. Inserting KREV1 still produces the centered upright monogram, with card 003 enclosed and no external transient card in the loaded state. Open and closed screenshots were saved from the final local production build; no browser console warnings/errors were observed.
+
+L04: strict TypeScript and production build pass; route JavaScript is 14.8 kB / 118 kB first load. No dependency, external logo image or runtime request was added. Existing mechanical tests run in exact-revision CI; no redundant decorative-mark unit tests were introduced. Remote delivery results are recorded in the accompanying report.
