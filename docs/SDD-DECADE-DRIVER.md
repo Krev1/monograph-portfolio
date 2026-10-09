@@ -60,12 +60,14 @@ Model fields: state, cardId, draggingId, openness, settling, origin, run. One po
 | idle                      | HANDLE_START                        | opening, origin idle                                 | gesture 0→1                    | cancel/subthreshold→idle     |
 | active                    | HANDLE_START / card present         | reopening, origin active; stage immediately unmounts | gesture 0→1                    | cancel→active with same card |
 | loaded                    | HANDLE_START / card present         | closing, origin loaded                               | gesture 1→0                    | cancel→loaded                |
+| open                      | HANDLE_START / slot empty           | closing, origin open                                 | gesture 1→0                    | cancel→open, no card          |
 | opening/reopening/closing | HANDLE_MOVE / not settling          | clamp openness, same state                           | immediate linked motion        | ignore foreign pointer       |
 | opening/reopening/closing | HANDLE_RELEASE / threshold          | mark settling, run++                                 | snap to endpoint               | no new gestures              |
 | opening                   | COMPLETE / run matches, settling    | open                                                 | bounded snap                   | stale completion ignored     |
 | reopening                 | COMPLETE / run matches, settling    | loaded, preserve card                                | bounded snap                   | stale completion ignored     |
 | closing                   | COMPLETE / card + matching run      | transforming, run++                                  | directed 1500 ms               | stale completion ignored     |
-| idle/active/loaded        | HANDLE_KEY                          | same opening/reopening/closing states, settling      | bounded full-travel equivalent | same guards                  |
+| closing                   | COMPLETE / no card + matching run   | idle, clear origin and settling                      | bounded mechanical closure     | no Henshin or content        |
+| idle/active/loaded/open   | HANDLE_KEY                          | same opening/reopening/closing states, settling      | bounded full-travel equivalent | same guards                  |
 | open                      | CARD_START / known card, slot empty | cardDragging, draggingId                             | pointer ghost                  | cancel→open                  |
 | cardDragging              | CARD_DROP / valid geometry          | inserting, cardId=draggingId, run++                  | downward lock                  | invalid→open                 |
 | open                      | INSERT_KEY / known card, slot empty | inserting, cardId, run++                             | same downward lock             | unsafe insertion ignored     |
@@ -76,7 +78,7 @@ Model fields: state, cardId, draggingId, openness, settling, origin, run. One po
 | loaded                    | EJECT_KEY                           | ejecting, settling, run++                            | equivalent return              | same card guard              |
 | ejecting                  | COMPLETE / run matches, settling    | open, cardId=null                                    | deck restores                  | stale ignored                |
 
-Invariants: cardId is null before loading; only one cardId exists; active/transforming/loaded/closing/reopening/ejecting require a card; no content mounts unless active; insertion requires empty open slot; any cancellation preserves the original committed card; transitions cannot accept a second gesture; project identity cannot change without ejection. Assertions and generated event walks test these properties.
+Invariants: cardId is null before loading; only one cardId exists; active/transforming/loaded/reopening/ejecting require a card. Closing comes either from loaded with its card or from open with no card. Empty closure returns idle without Henshin. No content mounts unless active; insertion requires empty open slot; any cancellation preserves the original committed position/card; transitions cannot accept a second gesture; project identity cannot change without ejection. Assertions and generated event walks test these properties. Empty closure was added by the later user correction recorded in `RECESSED-ENTRY-EMPTY-CLOSURE.md`.
 
 ## Input, feedback and accessibility
 

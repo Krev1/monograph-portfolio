@@ -19,7 +19,7 @@ export type DriverModel = {
   draggingId: ProjectId | null;
   openness: number;
   settling: boolean;
-  origin: "idle" | "active" | "loaded" | null;
+  origin: "idle" | "active" | "loaded" | "open" | null;
   run: number;
 };
 
@@ -56,7 +56,7 @@ function restoreHandle(model: DriverModel): DriverModel {
   return {
     ...model,
     state: model.origin,
-    openness: model.origin === "loaded" ? 1 : 0,
+    openness: model.origin === "loaded" || model.origin === "open" ? 1 : 0,
     origin: null,
     settling: false,
   };
@@ -69,8 +69,9 @@ export function driverReducer(
   switch (event.type) {
     case "HANDLE_START":
     case "HANDLE_KEY": {
-      if (!["idle", "active", "loaded"].includes(model.state)) return model;
-      const origin = model.state as "idle" | "active" | "loaded";
+      if (!["idle", "active", "loaded", "open"].includes(model.state))
+        return model;
+      const origin = model.state as "idle" | "active" | "loaded" | "open";
       const state =
         origin === "idle"
           ? "opening"
@@ -171,7 +172,13 @@ export function driverReducer(
                 settling: false,
                 run: model.run + 1,
               }
-            : model;
+            : {
+                ...model,
+                state: "idle",
+                openness: 0,
+                origin: null,
+                settling: false,
+              };
         case "inserting":
           return { ...model, state: "loaded", settling: false };
         case "ejecting":
@@ -187,7 +194,6 @@ export function driverInvariants(model: DriverModel): boolean {
   const requiresCard = [
     "inserting",
     "loaded",
-    "closing",
     "transforming",
     "active",
     "reopening",
@@ -199,6 +205,9 @@ export function driverInvariants(model: DriverModel): boolean {
   return (
     (!requiresCard || model.cardId !== null) &&
     (!empty || model.cardId === null) &&
+    (model.state !== "closing" ||
+      (model.origin === "open" && model.cardId === null) ||
+      (model.origin === "loaded" && model.cardId !== null)) &&
     (model.state !== "cardDragging" || model.draggingId !== null) &&
     (model.state === "cardDragging" || model.draggingId === null) &&
     model.openness >= 0 &&

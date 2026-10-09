@@ -307,10 +307,10 @@ figure {
   transition: transform 0.18s ease-out;
 }
 .dx-slot-ready {
-  opacity: var(--open);
+  opacity: calc(var(--open) * 0.25);
 }
-.dx-card-slot {
-  opacity: clamp(0, calc(var(--open) * 1.8 - 0.2), 1);
+.slot-aligned .dx-slot-ready {
+  opacity: 1;
 }
 .dx-lens-lit {
   opacity: 0;
@@ -396,7 +396,7 @@ figure {
 .card-mouth {
   position: absolute;
   z-index: 6;
-  top: 2%;
+  top: 4%;
   left: 50%;
   width: 14%;
   min-width: 54px;
@@ -410,24 +410,8 @@ figure {
   user-select: none;
   opacity: var(--open);
 }
-.card-mouth span {
-  position: absolute;
-  top: -18px;
-  left: 0;
-  right: 0;
-  white-space: nowrap;
-  font-size: 8px;
-  letter-spacing: 1px;
-  color: #ffb8dd;
-  padding: 2px 0;
-  opacity: calc(1 - var(--dock));
-}
 .card-mouth:disabled {
   pointer-events: none;
-}
-.slot-aligned .card-mouth {
-  border-color: var(--soft-pink);
-  background: #ff3ea51f;
 }
 .card-mouth:hover:not(:disabled) {
   cursor: ns-resize;
@@ -1028,13 +1012,7 @@ figure {
     letter-spacing: 0.5px;
   }
   .card-mouth {
-    top: 2%;
     width: 18%;
-  }
-  .card-mouth span {
-    font-size: 6px;
-    padding: 2px 0;
-    top: -14px;
   }
   .input-controls {
     bottom: 55px;

@@ -160,7 +160,10 @@ export default function DecadeExperience() {
   const moving =
     ["opening", "closing", "reopening"].includes(model.state) &&
     !model.settling;
-  const handlesReady = ["idle", "active", "loaded"].includes(model.state);
+  const handlesReady = ["idle", "active", "loaded", "open"].includes(
+    model.state,
+  );
+  const closingReady = model.state === "loaded" || model.state === "open";
   const frame = henshinFrame(elapsed, reduced);
   const dock =
     model.state === "active"
@@ -366,7 +369,7 @@ export default function DecadeExperience() {
       target: event.currentTarget,
       x: event.clientX,
       side,
-      closing: model.state === "loaded",
+      closing: closingReady,
       travel: Math.max(
         28,
         (sceneRef.current?.getBoundingClientRect().width ?? 600) *
@@ -495,7 +498,12 @@ export default function DecadeExperience() {
           held.travel,
         ) >= SNAP_THRESHOLD;
       dispatch({ type: "HANDLE_RELEASE", committed });
-      if (!committed) setNotice("Pull farther to reach the mechanical lock.");
+      if (!committed)
+        setNotice(
+          held.closing
+            ? "Push farther to reach the mechanical lock."
+            : "Pull farther to reach the mechanical lock.",
+        );
     } else if (held.kind === "card") {
       const slot = slotRef.current?.getBoundingClientRect() ?? null;
       const aligned = attractCard(
@@ -523,12 +531,12 @@ export default function DecadeExperience() {
       return;
     event.preventDefault();
     const direction = event.key === "ArrowLeft" ? -1 : 1;
-    if (direction === (model.state === "loaded" ? -side : side)) {
+    if (direction === (closingReady ? -side : side)) {
       setNotice("");
       dispatch({ type: "HANDLE_KEY" });
     } else
       setNotice(
-        model.state === "loaded"
+        closingReady
           ? "Push this handle inward to close."
           : "Pull this handle outward to open.",
       );
@@ -548,14 +556,18 @@ export default function DecadeExperience() {
       : "DRAG CARD DOWN TO THE READER",
     inserting: "READING PROJECT CARD",
     loaded: "CARD SET — PUSH HANDLES IN",
-    closing: "CLOSING — PUSH TO THE LOCK",
+    closing: model.cardId
+      ? "CLOSING — PUSH TO THE LOCK"
+      : "CLOSING — EMPTY READER",
     transforming: "HENSHIN — PROJECT RECOGNIZED",
     active: "PROJECT ACTIVE — REOPEN TO CHANGE CARD",
     reopening: "REOPENING — CARD RETAINED",
     ejecting: "PULL CARD UP TO EJECT",
   }[model.state];
   const step =
-    model.state === "idle" || model.state === "opening"
+    model.state === "idle" ||
+    model.state === "opening" ||
+    (model.state === "closing" && !model.cardId)
       ? 1
       : model.state === "open" || model.state === "cardDragging"
         ? 2
@@ -657,7 +669,7 @@ export default function DecadeExperience() {
             (model.state === "idle"
               ? "Hold either handle. Pull outward."
               : model.state === "open"
-                ? "Choose a card. Keep it vertical. Drag down."
+                ? "Insert a card, or push the handles inward to close."
                 : model.state === "loaded"
                   ? "Close to transform, or pull the card upward to eject."
                   : model.state === "active"
@@ -786,11 +798,7 @@ export default function DecadeExperience() {
                 dispatch({ type: "EJECT_KEY" });
               }
             }}
-          >
-            <span aria-hidden="true">
-              {model.cardId ? "↑ EJECT" : "↓ INSERT"}
-            </span>
-          </button>
+          />
           {([-1, 1] as const).map((side) => (
             <button
               ref={side === -1 ? leftRef : undefined}
@@ -800,7 +808,7 @@ export default function DecadeExperience() {
               aria-label={
                 (side === -1 ? "Left" : "Right") +
                 " handle. " +
-                (model.state === "loaded" || model.state === "closing"
+                (closingReady || model.state === "closing"
                   ? "Push inward to close"
                   : "Pull outward to open")
               }
@@ -817,7 +825,7 @@ export default function DecadeExperience() {
               }}
             >
               <span aria-hidden="true">
-                {model.state === "loaded" || model.state === "closing"
+                {closingReady || model.state === "closing"
                   ? side === -1
                     ? "PUSH →"
                     : "← PUSH"
@@ -885,10 +893,10 @@ export default function DecadeExperience() {
         </button>
         <p id="input-help" className="sr-only">
           Pull the left handle with Arrow Left or the right with Arrow Right.
-          When loaded, reverse the arrow to close. Enter or Space performs the
-          current handle operation. On an open Driver, Enter on a project card
-          inserts it. Arrow Up or Enter on the loaded card ejects it. Escape
-          cancels a drag.
+          When open, reverse the arrow to close with or without a card. Enter or
+          Space performs the current handle operation. On an open Driver, Enter
+          on a project card inserts it. Arrow Up or Enter on the loaded card
+          ejects it. Escape cancels a drag.
         </p>
         {tapControls && (
           <div className="tap-controls" id="tap-controls">
@@ -913,7 +921,7 @@ export default function DecadeExperience() {
             </p>
             <button
               type="button"
-              disabled={!handlesReady || model.state === "loaded"}
+              disabled={model.state !== "idle" && model.state !== "active"}
               onClick={() => {
                 setNotice("");
                 dispatch({ type: "HANDLE_KEY" });
@@ -923,7 +931,7 @@ export default function DecadeExperience() {
             </button>
             <button
               type="button"
-              disabled={model.state !== "loaded"}
+              disabled={!closingReady}
               onClick={() => {
                 setNotice("");
                 dispatch({ type: "HANDLE_KEY" });

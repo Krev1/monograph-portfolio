@@ -154,7 +154,7 @@ function DecadriverModel({
             <circle cx="500" cy="257" r="85" />
           </clipPath>
           <clipPath id={ref("cardWindowClip")}>
-            <rect x="302" y="235" width="65" height="53" rx="1" />
+            <rect x="294" y="235" width="79" height="53" rx="1" />
           </clipPath>
           <linearGradient id={ref("windowShadow")} x1="0" y1="0" x2="1" y2="0">
             <stop stopColor="#000" stopOpacity=".7" />
@@ -312,7 +312,7 @@ function DecadriverModel({
             />
           ))}
           <path
-            d="M348 112H652L683 134L706 195L723 228V294L704 355L679 393L652 416H348L321 393L296 355L277 294V228L294 195L317 134Z"
+            d="M348 58H652L681 100L683 134L706 195L723 228V294L704 355L679 393L652 416H348L321 393L296 355L277 294V228L294 195L317 134L319 100Z"
             fill={paint("shell")}
             stroke="#0e151c"
             strokeWidth="7"
@@ -360,31 +360,21 @@ function DecadriverModel({
             />
             <use href={`#${ref("pods")}`} x="737" y="263" />
           </g>
-          {/* The fixed rear nameplate is occluded by the opening reader. */}
+          {/* Engraving on the connected rear carrier crown, behind the reader. */}
           <g className="dx-carrier-brand" data-testid="carrier-brand">
+            <path d="M349 60H651L664 78H336Z" fill={paint("shell")} />
             <path
-              d="M348 51H651L667 78H333Z"
-              fill="#090f15"
-              transform="translate(0 2)"
-            />
-            <path
-              d="M348 51H651L667 78H333Z"
-              fill={paint("shell")}
-              stroke="#777f83"
-              strokeWidth="1.5"
-            />
-            <path
-              d="M351 53H649"
+              d="M351 62H649"
               stroke="#d6d9d5"
               strokeWidth="1.1"
               opacity=".75"
             />
             <text
               x="501"
-              y="71"
+              y="74"
               textAnchor="middle"
-              fontSize="13"
-              letterSpacing="11"
+              fontSize="12"
+              letterSpacing="10"
               fontFamily="Arial,sans-serif"
               fontWeight="600"
               fill="#c4cccc"
@@ -450,16 +440,16 @@ function DecadriverModel({
               data-card-id={card?.id}
             >
               <path
-                d="M299 232H373V291H299Z"
+                d="M290 232H376V291H290Z"
                 fill="#05090c"
                 stroke="#717b7c"
                 strokeWidth="1.2"
               />
               <g clipPath={paint("cardWindowClip")}>
                 <rect
-                  x="302"
+                  x="294"
                   y="235"
-                  width="65"
+                  width="79"
                   height="53"
                   fill={paint("cavity")}
                 />
@@ -476,20 +466,36 @@ function DecadriverModel({
                   </g>
                 )}
                 <rect
-                  x="302"
+                  x="294"
                   y="235"
-                  width="65"
+                  width="79"
                   height="53"
                   fill={paint("windowShadow")}
                 />
               </g>
               <path
-                d="M301 234H369M301 289H369"
+                d="M292 234H369M292 289H369"
                 stroke="#b5beba"
                 strokeWidth="1"
                 opacity=".65"
               />
-              <path d="M302 236V287" stroke="#010406" strokeWidth="3" />
+              <path
+                d="M295 238H367M295 285H367"
+                stroke="#010406"
+                strokeWidth="3"
+              />
+              <path
+                d="M291 234Q310 261 291 289"
+                fill="none"
+                stroke="#53656b"
+                strokeWidth="1.5"
+              />
+              <path
+                className="dx-slot-ready"
+                d="M297 237H367M297 286H367"
+                stroke="#dc95ba"
+                strokeWidth="1.2"
+              />
             </g>
             <path
               d="M333 161Q382 97 464 117M536 117Q615 99 667 161"
@@ -505,31 +511,6 @@ function DecadriverModel({
               strokeWidth="1"
               opacity=".3"
             />
-
-            {/* Left-edge slot reaches the top at the clockwise quarter-turn. */}
-            <g className="dx-card-slot">
-              <path
-                d="M287 184L304 190V325L287 332Z"
-                fill={paint("silver")}
-                stroke="#152027"
-                strokeWidth="2"
-              />
-              <rect
-                x="290"
-                y="196"
-                width="7"
-                height="123"
-                rx="3"
-                fill="#02070a"
-              />
-              <path d="M299 197V318" stroke="#909b9c" strokeWidth="1" />
-              <path
-                className="dx-slot-ready"
-                d="M293 202V313"
-                stroke="#dc95ba"
-                strokeWidth="2"
-              />
-            </g>
 
             <circle
               cx="500"

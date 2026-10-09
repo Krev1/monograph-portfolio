@@ -23,7 +23,11 @@ describe("Driver invariants and recovery", () => {
     expect(reduce(initialDriver, { type: "INSERT_KEY", cardId: "001" })).toBe(
       initialDriver,
     );
-    expect(reduce(open(), { type: "HANDLE_KEY" }).state).toBe("open");
+    const emptyClose = reduce(open(), { type: "HANDLE_KEY" });
+    expect(emptyClose.state).toBe("closing");
+    expect(driverInvariants(emptyClose)).toBe(true);
+    expect(complete(emptyClose).state).toBe("idle");
+    expect(complete(emptyClose).cardId).toBeNull();
     let state = reduce(loaded(), { type: "HANDLE_KEY" });
     expect(state.state).toBe("closing");
     state = complete(state);
@@ -41,6 +45,32 @@ describe("Driver invariants and recovery", () => {
     expect(
       reduce(state, { type: "HANDLE_RELEASE", committed: false }).openness,
     ).toBe(0);
+  });
+  it("restores open after a cancelled empty closure and rejects its stale completion", () => {
+    const held = reduce(open(), { type: "HANDLE_START" });
+    expect(held.origin).toBe("open");
+    expect(reduce(held, { type: "INSERT_KEY", cardId: "001" })).toBe(held);
+    const partial = reduce(held, { type: "HANDLE_MOVE", openness: 0.4 });
+    const cancelled = reduce(partial, { type: "HANDLE_CANCEL" });
+    expect(cancelled).toMatchObject({
+      state: "open",
+      openness: 1,
+      cardId: null,
+    });
+    expect(
+      reduce(partial, { type: "HANDLE_RELEASE", committed: false }),
+    ).toMatchObject({ state: "open", openness: 1, cardId: null });
+    const closed = reduce(cancelled, { type: "HANDLE_KEY" });
+    const reopening = reduce(complete(closed), { type: "HANDLE_KEY" });
+    expect(
+      reduce(reopening, {
+        type: "COMPLETE",
+        state: "closing",
+        run: closed.run,
+      }),
+    ).toBe(reopening);
+    expect(complete(reopening).state).toBe("open");
+    expect(driverInvariants(reopening)).toBe(true);
   });
   it("rejects insertion while occupied and preserves the card after reopen cancellation", () => {
     expect(reduce(loaded(), { type: "INSERT_KEY", cardId: "002" }).cardId).toBe(

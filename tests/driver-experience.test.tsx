@@ -33,6 +33,72 @@ beforeEach(() => {
   );
 });
 describe("Controller integration", () => {
+  it.each(["full", "reduced"])(
+    "closes an empty reader through tap controls in %s motion without Henshin",
+    async (mode) => {
+      render(<DecadeExperience />);
+      fireEvent.click(screen.getByRole("button", { name: /KEYBOARD & TAP/ }));
+      fireEvent.change(screen.getByRole("combobox", { name: "Animation" }), {
+        target: { value: mode },
+      });
+      const duration = mode === "reduced" ? 60 : 180;
+      fireEvent.click(screen.getByRole("button", { name: "Open Driver" }));
+      await advance(duration);
+      expect(state()).toBe("open");
+      expect(
+        (
+          screen.getByRole("button", {
+            name: "Open Driver",
+          }) as HTMLButtonElement
+        ).disabled,
+      ).toBe(true);
+      const closeButton = screen.getByRole("button", {
+        name: "Push handles in",
+      });
+      expect((closeButton as HTMLButtonElement).disabled).toBe(false);
+      fireEvent.click(closeButton);
+      expect(state()).toBe("closing");
+      await advance(duration - 1);
+      expect(state()).toBe("closing");
+      expect(screen.queryByTestId("project-stage")).toBeNull();
+      await advance(1);
+      expect(state()).toBe("idle");
+      await advance(1500);
+      expect(state()).toBe("idle");
+      expect(screen.queryByTestId("lens-emblem")).toBeNull();
+      expect(screen.queryByTestId("project-stage")).toBeNull();
+      fireEvent.click(screen.getByRole("button", { name: "Open Driver" }));
+      await advance(duration);
+      fireEvent.click(card());
+      await advance(mode === "reduced" ? 60 : CARD_INSERT_DURATION);
+      expect(state()).toBe("loaded");
+    },
+  );
+  it("restores an empty open reader after short or cancelled pointer closure, then closes by keyboard", async () => {
+    render(<DecadeExperience />);
+    await open();
+    const handle = left();
+    fireEvent.keyDown(handle, { key: "ArrowLeft" });
+    expect(state()).toBe("open");
+    fireEvent.pointerDown(handle, { pointerId: 1, clientX: 200 });
+    fireEvent.pointerUp(handle, { pointerId: 1, clientX: 210 });
+    expect(state()).toBe("open");
+    fireEvent.pointerDown(handle, { pointerId: 1, clientX: 200 });
+    fireEvent.pointerMove(handle, { pointerId: 1, clientX: 300 });
+    fireEvent.pointerUp(handle, { pointerId: 2, clientX: 300 });
+    expect(state()).toBe("closing");
+    fireEvent.lostPointerCapture(handle, { pointerId: 1 });
+    expect(state()).toBe("open");
+    expect(
+      screen.getByTestId("driver-scene").style.getPropertyValue("--open"),
+    ).toBe("1");
+    fireEvent.pointerUp(handle, { pointerId: 1, clientX: 300 });
+    expect(state()).toBe("open");
+    fireEvent.keyDown(handle, { key: "ArrowRight" });
+    await advance(180);
+    expect(state()).toBe("idle");
+    expect(screen.queryByTestId("project-stage")).toBeNull();
+  });
   it("tap controls preserve opening, insertion and closing before reveal", async () => {
     render(<DecadeExperience />);
     fireEvent.click(screen.getByRole("button", { name: /KEYBOARD & TAP/ }));
