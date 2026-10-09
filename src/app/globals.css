@@ -90,3 +90,36 @@
 @keyframes exHenshinSnap{0%{opacity:0;transform:scale(1.3)}25%{opacity:1;transform:scale(.92)}65%{transform:scale(1.04)}100%{opacity:1;transform:scale(1)}}
 @media(max-width:520px){.ex-rotating-reader{height:180px;width:180px;margin:-90px 0 0 -90px}.ex-reader-rivet-markers span{transform-origin:3px 72px}.ex-driver-core{width:136px;height:136px}.ex-grip{width:80px;height:51px;bottom:0}.ex-grip-elements i{height:13px;width:6px}.ex-grip-label{font-size:8px}.ex-buckle-shell{inset:-7px}.ex-project-card>strong{font-size:17px}.ex-card-emblem b{font-size:40px}}
 @media(prefers-reduced-motion:reduce){.ex-henshin-core,.ex-henshin-stripes i{animation:none!important}.ex-rotating-reader,.ex-gate{transition:none!important}}
+
+
+/* v4 -- photo-reference Decadriver hardware, retaining pointer-driven gestures */
+.ex-device{height:clamp(255px,43vw,435px);position:relative;isolation:isolate}
+.dx-model{position:absolute;inset:0;z-index:3;pointer-events:none;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 20px 24px #020106)}
+.dx-svg{width:100%;height:100%;overflow:visible}
+.dx-face-rotor{transform-box:view-box;transform-origin:50% 50%;transform:rotate(calc(var(--ex-open-p) * 90deg));transition:transform .58s cubic-bezier(.2,.75,.2,1)}
+.ex-device-dragging .dx-face-rotor{transition:none}
+.dx-spindle{opacity:var(--ex-open-p);transition:opacity .3s}
+.dx-lens-scanner{opacity:0;transition:opacity .18s}
+.dx-model-activated .dx-lens-scanner{opacity:1}
+.dx-model-activated .dx-lens-lit{opacity:1;filter:url(#dxGlow)}
+.dx-mechanical-left{transform:translateX(calc(var(--ex-open-p) * -62px));transition:transform .55s cubic-bezier(.2,.75,.2,1)}
+.dx-mechanical-right{transform:translateX(calc(var(--ex-open-p) * 62px));transition:transform .55s cubic-bezier(.2,.75,.2,1)}
+.ex-device-dragging .dx-mechanical-left,.ex-device-dragging .dx-mechanical-right{transition:none}
+.ex-device>.ex-belt{visibility:hidden}
+.ex-mechanism{background:none;clip-path:none;box-shadow:none;z-index:8;pointer-events:none}
+.ex-mechanism:before,.ex-buckle-shell,.ex-mechanism-tracks,.ex-rotating-reader,.ex-gate,.ex-driver-core,.ex-scan{display:none!important}
+.ex-slot-surround{z-index:9;position:absolute;left:35%;top:6%;width:30%;height:83%;border:0;background:transparent;box-shadow:none!important;pointer-events:none;opacity:0;transition:opacity .22s}
+.ex-device-open .ex-slot-surround{opacity:1}
+.ex-slot{width:100%;height:100%;border:1px dashed #ff76c777;background:#0a071bd9;pointer-events:auto}
+.ex-slot:disabled{pointer-events:none}
+.ex-slot-card{z-index:2}
+.ex-grip{z-index:15;bottom:25%;width:clamp(44px,7.5vw,86px);height:clamp(50px,8vw,94px);background:#17101929;border:1px solid transparent;box-shadow:none;opacity:.7}
+.ex-grip-left{left:-37%}.ex-grip-right{right:-37%}
+.ex-grip:after,.ex-grip-elements{display:none}
+.ex-grip-label{font-size:9px;white-space:nowrap;text-shadow:0 1px 5px #000}
+.ex-grip:hover,.ex-grip:focus-visible{background:#ee70b725;border-color:#f6b4d5;opacity:1}
+.ex-phase-active .ex-device{height:174px;transform:scale(.82);transform-origin:center bottom}
+.ex-driver-zone{width:min(1040px,96vw)}
+.ex-driver-hint{margin-top:0}
+@media(max-width:640px){.ex-device{height:250px}.ex-mechanism{width:240px;height:190px}.ex-grip-left{left:-28%}.ex-grip-right{right:-28%}.ex-grip{width:44px;height:56px;bottom:34%}.ex-grip-label{font-size:6px}.ex-slot-surround{left:37%;width:26%;height:85%}.ex-phase-active .ex-device{transform:scale(.93)}}
+@media(prefers-reduced-motion:reduce){.dx-face-rotor,.dx-mechanical-left,.dx-mechanical-right{transition:none}}
