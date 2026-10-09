@@ -51,7 +51,14 @@ R01/R06/R09/R12: reducer and controller tests. R03/R04/R05: geometry/controller 
 Target: existing GitHub repository, review branch `feat/decade-driver-sdd`, draft PR against `main`. Production is not automatically merged or replaced.
 Vercel project identity was verified through CLI: `tmtri0910-6726/monograph-portfolio`, ID `prj_41vnhMHlpz149ZGqy91SwyFAxjux`, Node 24, Next.js preset. The connector's scoped project-detail request returned 403; the explicitly scoped CLI read succeeded.
 
-Remote CI and preview build results will be recorded after the review commit is published. Local build success alone does not establish remote deployment success.
+Review source commit: `e6d9f6d93d0af2545d4e684ed55b10bd1f10e983`.
+
+- [Draft PR #1](https://github.com/Krev1/monograph-portfolio/pull/1) is open against `main`.
+- [Pull request CI run](https://github.com/Krev1/monograph-portfolio/actions/runs/37878798416) and [branch CI run](https://github.com/Krev1/monograph-portfolio/actions/runs/37878785236) both completed with **success**. These include clean-install type checking, all 27 tests and the production build on Linux / Node 24.
+- [Vercel preview](https://monograph-portfolio-nhtggpefq-tmtri0910-6726.vercel.app) is **READY**; its build log identifies branch `feat/decade-driver-sdd`, commit `e6d9f6d`, Next.js 15.5.27 and a completed 32-second build. The GitHub Vercel status is **success**.
+- An authenticated `vercel curl` read of this exact preview returned **HTTP 200**. Its initial markup is idle and does not mount the project stage.
+- Native browser UI testing used the matching local production build. The remote preview redirects an unauthenticated browser to Vercel login; remote UI testing in that browser has not been claimed. The preview link requires Vercel access.
+- `main` and the production alias were not merged or promoted. This record documents the tested review source; subsequent evidence-only changes do not alter the implementation.
 
 ## Remaining verification limits
 
