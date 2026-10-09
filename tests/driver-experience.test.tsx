@@ -343,17 +343,29 @@ describe("Recessed card reader", () => {
     ).toBe(true);
   });
   it.each([
-    ["SPENDWISE AI", "001", "ledger"],
-    ["LEARN", "002", "brackets"],
-    ["KREV1 PORTFOLIO", "003", "monogram"],
+    ["SPENDWISE AI", "001", "ledger", "#ff3ea5"],
+    ["LEARN", "002", "brackets", "#9c63ff"],
+    ["KREV1 PORTFOLIO", "003", "monogram", "#ff8dca"],
   ])(
     "reads %s into the lens before Henshin and retains it through reopening",
-    async (name, id, emblem) => {
+    async (name, id, emblem, accent) => {
       render(<DecadeExperience />);
       expect(screen.queryByTestId("lens-emblem")).toBeNull();
       await open();
       fireEvent.click(card(name));
       expect(state()).toBe("inserting");
+      expect(card(name).classList.contains("is-in-driver")).toBe(true);
+      expect(
+        document.querySelectorAll(".project-card.is-in-driver"),
+      ).toHaveLength(1);
+      expect(card(name).getAttribute("aria-describedby")).toContain(
+        "occupied-card-note",
+      );
+      expect(
+        document
+          .querySelector("main")!
+          .style.getPropertyValue("--driver-accent"),
+      ).toBe(accent);
       expect(screen.queryByTestId("lens-emblem")).toBeNull();
       expect(screen.getByTestId("transient-card")).toBeTruthy();
       expect(
@@ -403,6 +415,16 @@ describe("Recessed card reader", () => {
       identity();
       await advance(180);
       identity();
+      expect(
+        document
+          .querySelector("main")!
+          .style.getPropertyValue("--driver-accent"),
+      ).toBe(accent);
+      expect(
+        document
+          .querySelector('radialGradient[id$="-activated"] stop')!
+          .getAttribute("stop-color"),
+      ).toBe(accent);
       await advance(1500);
       identity();
       fireEvent.keyDown(left(), { key: "ArrowLeft" });
@@ -419,6 +441,7 @@ describe("Recessed card reader", () => {
       );
       await advance(280);
       expect(state()).toBe("open");
+      expect(card(name).classList.contains("is-in-driver")).toBe(false);
       expect(screen.queryByTestId("lens-emblem")).toBeNull();
       expect(screen.queryByTestId("seated-card")).toBeNull();
     },
@@ -437,6 +460,7 @@ describe("Recessed card reader", () => {
     fireEvent.keyDown(window, { key: "Escape" });
     expect(state()).toBe("loaded");
     expect(screen.queryByTestId("transient-card")).toBeNull();
+    expect(card().classList.contains("is-in-driver")).toBe(true);
     expect(
       screen.getByTestId("driver-scene").style.getPropertyValue("--card-pull"),
     ).toBe("0");

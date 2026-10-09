@@ -30,6 +30,8 @@ For development, use `npm run dev`. The production site is connected to the exis
 
 Optional **Keyboard & tap controls** exposes equivalent operations one step at a time. Animation defaults to Full motion and remembers your choice; Device setting follows the device preference and Reduced motion shortens effects while preserving every logical step. Sound defaults off.
 
+Enable **Sound** for the original electronic reader sequence: robotic card announcements, barcode sweep, waiting texture, latch and layered transformation. Voices preload only after enabling sound; missing audio never blocks the Driver. The occupied deck card is dimmed until extraction. Henshin's ring, scanner, glass light and identification use that card's accent.
+
 An empty open Driver can also close. It returns to standby; transformation and project content require an inserted card.
 
 ## Specification and evidence
@@ -42,6 +44,8 @@ An empty open Driver can also close. It returns to standby; transformation and p
 - [Fixed carrier branding and card passage under the lens](docs/CARRIER-BRANDING-LENS-ENTRY.md)
 - [Continuous card mechanics, rotating lens print and rear carrier branding](docs/CONTINUOUS-CARD-MECHANICS.md)
 - [Recessed entry, integrated carrier and empty closure](docs/RECESSED-ENTRY-EMPTY-CLOSURE.md)
+- [Card feedback, Henshin colors and electronic reader audio](docs/CARD-FEEDBACK-HENSHIN-AUDIO.md)
+- [Original announcement provenance](public/audio/PROVENANCE.md)
 - [Verification and delivery record](docs/VERIFICATION.md)
 - `src/lib/driver-machine.ts`: pure guarded transitions and run tokens
 - `src/lib/driver-geometry.ts`: scale-aware gestures and slot attraction

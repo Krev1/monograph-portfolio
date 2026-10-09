@@ -21,6 +21,8 @@ import DecadriverModel from "./decadriver-model";
 import ProjectStage from "./project-stage";
 import { CardArtwork } from "./card-artwork";
 import { DRIVER_DIMENSIONS } from "@/lib/driver-dimensions";
+import { DriverAudio } from "@/lib/driver-audio";
+import type { DriverSound } from "@/lib/driver-sound-score";
 
 type Lease = { pointerId: number; target: HTMLButtonElement } & (
   | {
@@ -49,14 +51,6 @@ type Ghost = {
   y: number;
   tilt: number;
   aligned: boolean;
-};
-type Sound = "snap" | "insert" | "henshin" | "ability" | "eject";
-const tones: Record<Sound, number[]> = {
-  snap: [180, 280],
-  insert: [440, 660, 880],
-  henshin: [130, 220, 440, 660, 880],
-  ability: [520, 780],
-  eject: [440, 260],
 };
 type MotionMode = "auto" | "full" | "reduced";
 const MOTION_STORAGE_KEY = "krev1-driver-motion-v1";
@@ -129,7 +123,7 @@ export default function DecadeExperience() {
   const leftRef = useRef<HTMLButtonElement>(null);
   const firstCardRef = useRef<HTMLButtonElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
-  const audioRef = useRef<AudioContext | null>(null);
+  const audioRef = useRef<DriverAudio | null>(null);
   const previousState = useRef(model.state);
   const soundedRun = useRef(-1);
   useEffect(() => {
@@ -173,42 +167,51 @@ export default function DecadeExperience() {
         : model.state === "transforming"
           ? frame.dock
           : 0;
-  function sound(type: Sound) {
+  function sound(type: DriverSound) {
     if (!soundEnabled) return;
     try {
-      const context = audioRef.current ?? new AudioContext();
-      audioRef.current = context;
-      void context.resume().catch(() => {});
-      tones[type].forEach((frequency, index) => {
-        const start = context.currentTime + index * 0.075;
-        const oscillator = context.createOscillator(),
-          gain = context.createGain();
-        oscillator.type = type === "snap" ? "triangle" : "sine";
-        oscillator.frequency.setValueAtTime(frequency, start);
-        gain.gain.setValueAtTime(0.0001, start);
-        gain.gain.exponentialRampToValueAtTime(0.025, start + 0.012);
-        gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.11);
-        oscillator.connect(gain);
-        gain.connect(context.destination);
-        oscillator.start(start);
-        oscillator.stop(start + 0.12);
-        oscillator.onended = () => {
-          oscillator.disconnect();
-          gain.disconnect();
-        };
-      });
+      audioRef.current?.play(type, modelRef.current.cardId);
     } catch {
       /* Optional audio does not affect the mechanical cycle. */
+    }
+  }
+  function toggleSound() {
+    if (soundEnabled) {
+      audioRef.current?.mute();
+      setSoundEnabled(false);
+      return;
+    }
+    try {
+      audioRef.current ??= new DriverAudio();
+      void audioRef.current.unlock().catch(() => {});
+      setSoundEnabled(true);
+    } catch {
+      /* Audio availability never blocks the Driver. */
     }
   }
   const soundRef = useRef(sound);
   soundRef.current = sound;
   useEffect(
     () => () => {
-      if (audioRef.current) void audioRef.current.close().catch(() => {});
+      audioRef.current?.dispose();
     },
     [],
   );
+  useEffect(() => {
+    const waiting = soundEnabled && model.state === "loaded";
+    audioRef.current?.setStandby(
+      waiting && document.visibilityState !== "hidden",
+    );
+    const visibility = () => {
+      if (document.visibilityState === "hidden") audioRef.current?.stopAll();
+      else audioRef.current?.setStandby(waiting);
+    };
+    document.addEventListener("visibilitychange", visibility);
+    return () => {
+      document.removeEventListener("visibilitychange", visibility);
+      audioRef.current?.setStandby(false);
+    };
+  }, [soundEnabled, model.state]);
 
   // A run token and deadline complement RAF; CSS animationend is never required.
   useEffect(() => {
@@ -591,6 +594,7 @@ export default function DecadeExperience() {
   const cardScale =
     sceneWidth === null ? null : sceneWidth / DRIVER_DIMENSIONS.viewportWidth;
   const experienceStyle = {
+    "--driver-accent": selected?.mainCard.accent ?? "#ff3ea5",
     "--card-insert-duration": `${CARD_INSERT_DURATION}ms`,
     "--card-entry-travel": `${DRIVER_DIMENSIONS.cardHeight + DRIVER_DIMENSIONS.cardSeatX - DRIVER_DIMENSIONS.cardEntryX}px`,
     "--project-card-width":
@@ -632,7 +636,7 @@ export default function DecadeExperience() {
           <button
             type="button"
             aria-pressed={soundEnabled}
-            onClick={() => setSoundEnabled((value) => !value)}
+            onClick={toggleSound}
           >
             SOUND {soundEnabled ? "ON" : "OFF"}
             <span aria-hidden="true">{soundEnabled ? "◖))" : "◖"}</span>
@@ -691,6 +695,7 @@ export default function DecadeExperience() {
                 type="button"
                 className={
                   "project-card" +
+                  (model.cardId === project.id ? " is-in-driver" : "") +
                   (ghost?.cardId === project.id ? " is-held" : "")
                 }
                 style={
@@ -704,7 +709,11 @@ export default function DecadeExperience() {
                   )
                 }
                 aria-label={"Insert " + project.title + " project card"}
-                aria-describedby="input-help"
+                aria-describedby={
+                  model.cardId === project.id
+                    ? "input-help occupied-card-note"
+                    : "input-help"
+                }
                 onPointerDown={(event) => startCard(event, project.id)}
                 {...pointerHandlers}
                 onClick={(event) => {
@@ -898,6 +907,12 @@ export default function DecadeExperience() {
           on a project card inserts it. Arrow Up or Enter on the loaded card
           ejects it. Escape cancels a drag.
         </p>
+        {model.cardId && (
+          <span id="occupied-card-note" className="sr-only">
+            This card is inside the Driver. Reopen and eject it before choosing
+            another card.
+          </span>
+        )}
         {tapControls && (
           <div className="tap-controls" id="tap-controls">
             <label className="motion-control">

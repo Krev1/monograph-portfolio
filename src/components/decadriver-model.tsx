@@ -127,8 +127,12 @@ function DecadriverModel({
             <stop offset="1" stopColor="#07271c" />
           </radialGradient>
           <radialGradient id={ref("activated")}>
-            <stop stopColor="#ed90bd" />
-            <stop offset=".38" stopColor="#9d2d62" />
+            <stop stopColor={card?.mainCard.accent ?? "#ff3ea5"} />
+            <stop
+              offset=".38"
+              stopColor={card?.mainCard.accent ?? "#ff3ea5"}
+              stopOpacity=".55"
+            />
             <stop offset="1" stopColor="#100b17" />
           </radialGradient>
           <pattern
@@ -634,12 +638,12 @@ function DecadriverModel({
                 cy="257"
                 r="74"
                 fill="none"
-                stroke="#b8668b"
+                stroke={card?.mainCard.accent ?? "#ff3ea5"}
                 strokeWidth="1.5"
               />
               <path
                 d="M444 208A74 74 0 0 1 566 224"
-                stroke="#efb5d0"
+                stroke={card?.mainCard.accent ?? "#ff3ea5"}
                 fill="none"
                 strokeWidth="2"
               />
