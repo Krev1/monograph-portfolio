@@ -3,6 +3,8 @@
 Date: 2026-10-09. Baseline: `577808345f5958424041e4d90785d9fb9fd2b75f`.
 This specification precedes implementation. The supplied prompt stops at section 8; accessibility below completes its stated keyboard/touch/reduced-motion requirements.
 
+The subsequent user-requested hardware fidelity revision is specified in [VISUAL-FIDELITY.md](VISUAL-FIDELITY.md). Its layered curved shell, open grips and rotating slot retain the same state and input contracts below.
+
 ## Reference study and evidence boundaries
 
 - **Verified:** [Toei's Decadriver entry](https://www.kamen-rider-official.com/zukan/items/272) explicitly describes pulling both side handles to rotate the buckle, loading a card, and pushing the handles to release energy. Its official photograph shows an ivory face, silver annulus, black lens, green upper jewel, lateral graphite grips and green/pink/blue circular details.

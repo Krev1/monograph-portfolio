@@ -10,6 +10,8 @@ export type Bounds = {
   height: number;
 };
 export const SNAP_THRESHOLD = 0.72;
+// 62 SVG units of linked grip travel in the 940-unit hardware viewport.
+export const HANDLE_TRAVEL_RATIO = 62 / 940;
 
 export function handleProgress(
   startX: number,

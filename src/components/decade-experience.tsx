@@ -7,6 +7,7 @@ import { driverReducer, initialDriver } from "@/lib/driver-machine";
 import type { ProjectId } from "@/lib/driver-machine";
 import {
   attractCard,
+  HANDLE_TRAVEL_RATIO,
   handleProgress,
   SNAP_THRESHOLD,
   validDrop,
@@ -296,7 +297,8 @@ export default function DecadeExperience() {
       closing: model.state === "loaded",
       travel: Math.max(
         28,
-        (sceneRef.current?.getBoundingClientRect().width ?? 600) * 0.11,
+        (sceneRef.current?.getBoundingClientRect().width ?? 600) *
+          HANDLE_TRAVEL_RATIO,
       ),
     });
     dispatch({ type: "HANDLE_START" });

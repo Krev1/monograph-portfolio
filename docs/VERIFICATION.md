@@ -2,6 +2,8 @@
 
 ## Scope and baseline
 
+The original implementation evidence is retained below. The current hardware fidelity revision and its new measurements are recorded at the end of this document.
+
 Source baseline: `577808345f5958424041e4d90785d9fb9fd2b75f` on `Krev1/monograph-portfolio`.
 Story: homepage → open linked handles → vertically insert one project card → inward close → bounded Henshin → active project / ability evidence → reopen with retained card → eject → next project.
 
@@ -65,3 +67,25 @@ Review source commit: `e6d9f6d93d0af2545d4e684ed55b10bd1f10e983`.
 ## Remaining verification limits
 
 Safari/Firefox, physical mobile touchscreen behavior, screen-reader sessions and measured performance on low-end hardware have not been tested in this session. Reduced motion and multi-pointer recovery are covered by automated controller tests. No claim of full WCAG conformance or real-device certification is made.
+
+## User-requested visual fidelity revision — 2026-10-09
+
+Specified before editing in `docs/VISUAL-FIDELITY.md`, against review commit `02c04693cb08d4ff3523eea8a69b0f2a764caad7`. The hardware now has a wider curved ivory shell, smaller open graphite grips, thin center band, muted translucent color pods, jewel facets, screws, bevels, rail ribs, fine brushed annulus and a reflective lens. Nine small original glyphs replace the repeated star pattern. The card mouth belongs to the rotor and reaches the top on clockwise opening; its closed appearance is concealed. Grip travel now corresponds to 62/940 of the measured scene width, so pointer travel follows the hardware rather than an unrelated distance.
+
+Local gates: all **27 tests** pass after the geometry change; TypeScript passes. The production build reports **117 kB** first-load JavaScript (14.3 kB route) with no additional rendering dependency. The React review confirms a memoized hardware component, instance-unique SVG IDs, unchanged pointer ownership and deadline cleanup, native controls, focus handoffs and reduced-motion equivalents.
+
+Native browser gestures on 390 × 844 completed open → vertical insertion of card 003 → inward closure → active portfolio. A pointer reopen at 320 × 568 removed the stage and preserved card 003. Ability selection automatically brings the panel into the bounded stage. The updated mobile stage shows its description and result above the larger dock. Short initial screens use vertical scrolling and reserve space below the deck for the Driver.
+
+| Viewport   | Deck bottom → hardware top | Handle dimensions / result                             |
+| ---------- | -------------------------- | ------------------------------------------------------ |
+| 320 × 568  | 337.2 → 367.2 px           | No horizontal overflow; initial document height 650 px |
+| 390 × 640  | 369.4 → 399.4 px           | No horizontal overflow; initial document height 710 px |
+| 320 × 760  | 365.2 → 452.3 px           | 64.0 × 71.1 px                                         |
+| 390 × 844  | 397.4 → 486.3 px           | 78.0 × 86.6 px                                         |
+| 768 × 1024 | 435.0 → 549.7 px           | 147.5 × 163.8 px                                       |
+| 1280 × 720 | 332.0 → 343.6 px           | 144.0 × 159.9 px                                       |
+| 1440 × 900 | 435.0 → 448.0 px           | 172.0 × 191.0 px                                       |
+
+Active 320 × 568: document height remains 568 px; handles are 60.2 × 66.8 px, and the hardware starts at 428.8 px. The stage has been extended safely toward the dock after this measurement. Final production-build screenshots and exact-head CI/preview checks are supplied with the updated delivery report.
+
+F01–F04/F07: photographed closed/open/loaded hardware and directed cycle. F05: existing controller/reducer suite plus native gestures. F06: viewport table, bounded stage and ability selection. F08: production build, type check and source review. The video remains unavailable; exact film mechanics/timing and physical-device tests are not claimed.
