@@ -37,6 +37,8 @@ The initial card/Driver overlap found during QA was corrected by removing redund
 
 ## Traceability
 
+Final layout refinement: the active stage scrolls in a bounded region above the dock, rather than behind a fixed Driver. Desktop 1440 × 900 measured stage bottom 667.5 px / Driver top 704.1 px. Mobile 320 × 568 measured stage bottom 402.2 px / Driver top 463.5 px, with document height exactly 568 px and no horizontal overflow. Ability selection brings its panel into this independent scroll region. This layout refinement was locally built and visually checked; its remote checks run on the subsequent review commit.
+
 R01/R06/R09/R12: reducer and controller tests. R03/R04/R05: geometry/controller tests and native browser gestures. R07/R11: milestone and reduced-motion tests. R02/R13: viewport geometry plus visual inspection. R08: project source inspection and evidenced ability interaction. R10: keyboard/tap tests, live status, focus handoff and measured target sizes. R14: local gates above; remote delivery is recorded below.
 
 ## Content and reference audit

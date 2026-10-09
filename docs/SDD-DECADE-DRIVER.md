@@ -47,6 +47,8 @@ Keep Next.js App Router/React/TypeScript. An SVG scene is sufficient for a front
 
 No request, authentication or token is required for the transformation. Verified, versioned static project content is deliberate: a live GitHub feed cannot prove feature completeness and would make entry dependent on network availability. Public source links preserve verification. Existing unused legacy components can remain unimported; only `/` is rendered.
 
+The active project stage scrolls independently within the viewport above the dock. Selecting an ability brings its evidence panel into that region without moving the Driver. This avoids a fixed device covering readable project content and preserves keyboard scrolling through the focusable stage.
+
 ## Formal state transition table
 
 Model fields: state, cardId, draggingId, openness, settling, origin, run. One pointer lease belongs to the controller; run identifies each bounded animation. Unknown/unsafe events return the unchanged model.

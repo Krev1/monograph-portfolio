@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import type { RefObject } from "react";
 import type { PortfolioProject } from "@/data/driver-projects";
 
@@ -85,10 +86,23 @@ export default function ProjectStage({
   headingRef: RefObject<HTMLHeadingElement | null>;
 }) {
   const ability = project.abilities.find((item) => item.id === abilityId);
+  const stageRef = useRef<HTMLElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!abilityId || !stageRef.current || !panelRef.current) return;
+    const stage = stageRef.current;
+    const top =
+      panelRef.current.getBoundingClientRect().top -
+      stage.getBoundingClientRect().top +
+      stage.scrollTop;
+    stage.scrollTop = Math.max(0, top - 12);
+  }, [abilityId]);
   return (
     <section
+      ref={stageRef}
       className="project-stage"
       aria-labelledby="project-title"
+      tabIndex={0}
       data-testid="project-stage"
     >
       <div className="stage-index">
@@ -164,6 +178,7 @@ export default function ProjectStage({
         </div>
         <div
           className="ability-panel"
+          ref={panelRef}
           id="ability-panel"
           aria-live="polite"
           aria-atomic="true"

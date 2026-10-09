@@ -672,6 +672,25 @@ figure {
   width: min(1200px, 90vw);
   margin: 30px auto 0;
   animation: stageReveal 0.3s ease-out both;
+  height: calc(100svh - 205px - min(940px, 96vw, 118svh) * 0.225 - 30px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #7c4c76 #170c20;
+  padding: 0 8px 28px 0;
+}
+.experience.state-active {
+  height: 100svh;
+  min-height: 100svh;
+  padding-bottom: 0;
+  overflow: hidden;
+}
+.state-active .experience-footer {
+  display: none;
+}
+.project-stage:focus-visible {
+  outline: 1px solid #9c63ff;
+  outline-offset: 4px;
 }
 .stage-index {
   display: flex;
@@ -977,6 +996,9 @@ figure {
   }
 }
 @media (max-width: 540px) {
+  .project-stage {
+    height: calc(100svh - 205px - 100vw * 0.3525 - 24px);
+  }
   .experience-header {
     height: 64px;
     padding: 0 5vw;
