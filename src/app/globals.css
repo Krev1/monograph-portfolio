@@ -384,8 +384,25 @@ figure {
 .dx-lens-scanner {
   opacity: 0;
 }
-.dx-model-activated .dx-lens-scanner {
-  opacity: 0.48;
+.dx-lens-display {
+  transform-box: view-box;
+  transform-origin: 500px 257px;
+  transform: rotate(calc(var(--open) * -90deg));
+  transition: transform 0.18s ease-out;
+}
+.dx-lens-emblem {
+  opacity: 0.9;
+  filter: drop-shadow(0 0 2px currentColor);
+}
+.dx-model-activated .dx-lens-emblem {
+  opacity: 1;
+  filter: drop-shadow(0 0 3px currentColor);
+}
+.dx-card-motion {
+  transform: translateX(calc(var(--card-pull, 0) * -100px));
+}
+.dx-transient-card {
+  pointer-events: none;
 }
 .state-transforming .dx-lens-scanner {
   opacity: calc(var(--scan) * 0.65);
@@ -401,6 +418,7 @@ figure {
   transition: none;
 }
 .is-tracking .dx-face-rotor,
+.is-tracking .dx-lens-display,
 .is-tracking .dx-mechanical-left,
 .is-tracking .dx-mechanical-right {
   transition: none;
@@ -448,11 +466,11 @@ figure {
 .card-mouth {
   position: absolute;
   z-index: 6;
-  top: -5%;
+  top: 2%;
   left: 50%;
-  width: 17%;
+  width: 14%;
   min-width: 54px;
-  height: 68px;
+  height: 22%;
   min-height: 44px;
   transform: translateX(-50%);
   background: transparent;
@@ -464,16 +482,15 @@ figure {
 }
 .card-mouth span {
   position: absolute;
-  bottom: 0;
+  top: -18px;
   left: 0;
   right: 0;
   white-space: nowrap;
   font-size: 8px;
   letter-spacing: 1px;
   color: #ffb8dd;
-  background: #120b17e8;
-  padding: 5px 0;
-  border-bottom: 2px solid var(--neon-pink);
+  padding: 2px 0;
+  opacity: calc(1 - var(--dock));
 }
 .card-mouth:disabled {
   pointer-events: none;
@@ -485,38 +502,9 @@ figure {
 .card-mouth:hover:not(:disabled) {
   cursor: ns-resize;
 }
-.loaded-card {
-  position: absolute;
-  z-index: 1;
-  top: -3%;
-  left: 43.5%;
-  width: 13%;
-  aspect-ratio: 0.73;
-  background: #1b1022;
-  border: 1px solid var(--card-accent);
-  padding: 9px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  opacity: clamp(0, calc((var(--open) - 0.7) * 3.34), 1);
-  transform: translateY(calc(var(--lift) * -1));
-  pointer-events: none;
-}
-.loaded-card .card-emblem {
-  inset: 15px 5px 35px;
-}
-.loaded-card strong {
-  font-size: 11px;
-  z-index: 1;
-  margin-top: auto;
-  margin-bottom: 8px;
-}
-.loaded-card .card-top,
-.loaded-card .card-bottom {
-  font-size: 5px;
-}
-.loaded-card .card-top span {
-  display: none;
+.card-mouth:focus-visible {
+  border-color: var(--soft-pink);
+  outline-offset: 2px;
 }
 .device-help {
   display: none;
@@ -541,10 +529,10 @@ figure {
   box-shadow: 0 0 30px #ff3ea54d;
   pointer-events: none;
 }
-.card-inserting {
+.dx-card-inserting .dx-card-motion {
   animation: cardInsert 0.32s ease-out both;
 }
-.card-ejecting {
+.dx-card-ejecting .dx-card-motion {
   animation: cardEject 0.28s ease-in both;
 }
 .drag-card {
@@ -933,15 +921,18 @@ figure {
 }
 @keyframes cardInsert {
   from {
-    transform: translateY(-100%);
+    transform: translateX(-170px);
   }
   to {
-    transform: translateY(0);
+    transform: translateX(0);
   }
 }
 @keyframes cardEject {
+  from {
+    transform: translateX(calc(var(--card-pull, 0) * -100px));
+  }
   to {
-    transform: translateY(-150%);
+    transform: translateX(-180px);
     opacity: 0;
   }
 }
@@ -1120,28 +1111,13 @@ figure {
     letter-spacing: 0.5px;
   }
   .card-mouth {
-    height: 48px;
-    top: -7%;
+    top: 2%;
     width: 18%;
   }
   .card-mouth span {
     font-size: 6px;
-    padding: 3px 0;
-    bottom: 0;
-  }
-  .loaded-card {
-    padding: 4px;
-    top: -3%;
-  }
-  .loaded-card .card-top {
-    font-size: 4px;
-  }
-  .loaded-card .card-bottom,
-  .loaded-card strong {
-    display: none;
-  }
-  .loaded-card .card-emblem {
-    inset: 10px 0 5px;
+    padding: 2px 0;
+    top: -14px;
   }
   .input-controls {
     bottom: 55px;

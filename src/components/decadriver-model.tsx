@@ -1,6 +1,8 @@
 "use client";
 
 import { memo, useId } from "react";
+import type { PortfolioProject } from "@/data/driver-projects";
+import { CardEmblemPaths } from "./card-emblem";
 
 // Original hardware: photograph-informed proportions, original glyphs and branding.
 const marks = [
@@ -26,7 +28,15 @@ const glyphPaths = [
   "M-10-11H-5V5L0 10L5 5V-11H10V8L0 16L-10 8ZM-2-14H2V1H-2Z",
 ];
 
-function DecadriverModel({ activated = false }: { activated?: boolean }) {
+function DecadriverModel({
+  activated = false,
+  card,
+  cardPhase = "seated",
+}: {
+  activated?: boolean;
+  card?: PortfolioProject;
+  cardPhase?: "inserting" | "seated" | "pulling" | "ejecting";
+}) {
   const id = useId().replace(/:/g, "");
   const ref = (name: string) => `${id}-${name}`;
   const paint = (name: string) => `url(#${ref(name)})`;
@@ -153,6 +163,83 @@ function DecadriverModel({ activated = false }: { activated?: boolean }) {
           <clipPath id={ref("lensClip")}>
             <circle cx="500" cy="257" r="85" />
           </clipPath>
+          <clipPath id={ref("cardWindowClip")}>
+            <rect x="302" y="235" width="65" height="53" rx="1" />
+          </clipPath>
+          <linearGradient id={ref("windowShadow")} x1="0" y1="0" x2="1" y2="0">
+            <stop stopColor="#000" stopOpacity=".7" />
+            <stop offset=".14" stopColor="#000" stopOpacity=".12" />
+            <stop offset=".72" stopColor="#000" stopOpacity=".12" />
+            <stop offset="1" stopColor="#000" stopOpacity=".8" />
+          </linearGradient>
+          {card && (
+            <g
+              id={ref("readerCard")}
+              transform="translate(300 315) rotate(-90)"
+            >
+              <rect
+                width="116"
+                height="170"
+                rx="5"
+                fill="#141019"
+                stroke="#d3c4d0"
+                strokeWidth="1.5"
+              />
+              <rect
+                x="4"
+                y="4"
+                width="108"
+                height="11"
+                rx="2"
+                fill={card.mainCard.accent}
+              />
+              <path
+                d="M7 20H109M7 153H109"
+                stroke={card.mainCard.accent}
+                strokeWidth="1.2"
+              />
+              <path
+                d="M3 24H10V28H3ZM3 32H13V36H3ZM3 42H10V44H3ZM3 50H13V54H3ZM3 60H10V64H3ZM3 73H13V77H3ZM3 83H10V87H3ZM3 94H13V97H3ZM3 108H10V112H3Z"
+                fill="#ccc2c9"
+              />
+              <g
+                transform="translate(18 30) scale(.5)"
+                color={card.mainCard.accent}
+              >
+                <CardEmblemPaths emblem={card.mainCard.emblem} />
+              </g>
+              <text
+                x="17"
+                y="28"
+                fill="#f3dae8"
+                fontFamily="Arial,sans-serif"
+                fontSize="7"
+                letterSpacing="2"
+              >
+                K / {card.id}
+              </text>
+              <text
+                x="16"
+                y="139"
+                fill="#f3dae8"
+                fontFamily="Arial,sans-serif"
+                fontSize="8"
+                fontWeight="700"
+              >
+                {card.title === "KREV1 PORTFOLIO" ? "KREV1" : card.title}
+              </text>
+              <text
+                x="16"
+                y="164"
+                fill={card.mainCard.accent}
+                fontFamily="Arial,sans-serif"
+                fontSize="5"
+                letterSpacing="1"
+              >
+                {card.mainCard.code}
+              </text>
+            </g>
+          )}
           <g id={ref("screw")}>
             <circle r="4" fill="#141b20" stroke="#859097" strokeWidth="1" />
             <path d="M-2-2L2 2" stroke="#b1b9bb" strokeWidth="1.1" />
@@ -335,6 +422,14 @@ function DecadriverModel({ activated = false }: { activated?: boolean }) {
         </g>
 
         <g className="dx-face-rotor">
+          {card && cardPhase !== "seated" && (
+            <g
+              className={"dx-transient-card dx-card-" + cardPhase}
+              data-testid="transient-card"
+            >
+              <use className="dx-card-motion" href={`#${ref("readerCard")}`} />
+            </g>
+          )}
           <path
             d="M344 78H656L680 109Q708 175 714 231V283Q711 355 681 407L658 437H342L319 407Q289 355 286 283V231Q292 174 320 109Z"
             fill="#10161d"
@@ -368,6 +463,54 @@ function DecadriverModel({ activated = false }: { activated?: boolean }) {
           <path d="M288 228H712V294H288Z" fill="#090f13" />
           <path d="M298 231H702M298 292H702" stroke="#4f5758" strokeWidth="1" />
           <path d="M625 232H702V290H625Z" fill={paint("ribs")} />
+          {/* Only this aperture exposes the fully seated card behind the casing. */}
+          <g
+            className="dx-reader-window"
+            data-testid="reader-card-window"
+            data-card-id={card?.id}
+          >
+            <path
+              d="M299 232H373V291H299Z"
+              fill="#05090c"
+              stroke="#717b7c"
+              strokeWidth="1.2"
+            />
+            <g clipPath={paint("cardWindowClip")}>
+              <rect
+                x="302"
+                y="235"
+                width="65"
+                height="53"
+                fill={paint("cavity")}
+              />
+              {card && (
+                <g
+                  className={"dx-card-" + cardPhase}
+                  data-testid="seated-card"
+                  data-card-id={card.id}
+                >
+                  <use
+                    className="dx-card-motion"
+                    href={`#${ref("readerCard")}`}
+                  />
+                </g>
+              )}
+              <rect
+                x="302"
+                y="235"
+                width="65"
+                height="53"
+                fill={paint("windowShadow")}
+              />
+            </g>
+            <path
+              d="M301 234H369M301 289H369"
+              stroke="#b5beba"
+              strokeWidth="1"
+              opacity=".65"
+            />
+            <path d="M302 236V287" stroke="#010406" strokeWidth="3" />
+          </g>
           <path
             d="M348 82H651L667 110H333Z"
             fill={paint("shell")}
@@ -493,6 +636,31 @@ function DecadriverModel({ activated = false }: { activated?: boolean }) {
             strokeWidth="2"
           />
           <circle cx="500" cy="257" r="85" fill={paint("lens")} />
+          <circle
+            className="dx-lens-lit"
+            cx="500"
+            cy="257"
+            r="83"
+            fill={paint("activated")}
+          />
+          {card && cardPhase !== "inserting" && (
+            <g clipPath={paint("lensClip")}>
+              <g
+                className="dx-lens-display"
+                data-testid="lens-emblem"
+                data-card-id={card.id}
+                data-emblem={card.mainCard.emblem}
+                color={card.mainCard.accent}
+              >
+                <g
+                  className="dx-lens-emblem"
+                  transform="translate(444 201) scale(.7)"
+                >
+                  <CardEmblemPaths emblem={card.mainCard.emblem} />
+                </g>
+              </g>
+            </g>
+          )}
           <g clipPath={paint("lensClip")}>
             <path
               d="M434 197Q489 158 558 207L463 292L419 259Z"
@@ -518,26 +686,20 @@ function DecadriverModel({ activated = false }: { activated?: boolean }) {
             />
             <circle cx="545" cy="219" r="2.4" fill="#e6eee0" opacity=".6" />
           </g>
-          <circle
-            className="dx-lens-lit"
-            cx="500"
-            cy="257"
-            r="83"
-            fill={paint("activated")}
-          />
           <g className="dx-lens-scanner">
             <circle
               cx="500"
               cy="257"
-              r="64"
+              r="74"
               fill="none"
               stroke="#b8668b"
               strokeWidth="1.5"
             />
             <path
-              d="M474 232V282M487 211V304M500 205V309M513 211V304M526 232V282"
+              d="M444 208A74 74 0 0 1 566 224"
               stroke="#efb5d0"
-              strokeWidth="6"
+              fill="none"
+              strokeWidth="2"
             />
           </g>
           <circle

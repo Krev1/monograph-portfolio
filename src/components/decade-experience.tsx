@@ -14,7 +14,8 @@ import {
 } from "@/lib/driver-geometry";
 import { henshinFrame, HENSHIN_DURATION } from "@/lib/driver-timeline";
 import DecadriverModel from "./decadriver-model";
-import ProjectStage, { CardEmblem } from "./project-stage";
+import ProjectStage from "./project-stage";
+import { CardEmblem } from "./card-emblem";
 
 type Lease = { pointerId: number; target: HTMLButtonElement } & (
   | {
@@ -214,6 +215,7 @@ export default function DecadeExperience() {
     const previous = previousState.current;
     previousState.current = model.state;
     if (model.state !== "active") setAbilityId(null);
+    if (model.state !== "ejecting") setLift(0);
     if (model.state === "open")
       firstCardRef.current?.focus({ preventScroll: true });
     if (model.state === "loaded")
@@ -377,7 +379,9 @@ export default function DecadeExperience() {
       setGhost({ cardId: held.cardId, ...attraction });
       held.previousX = event.clientX;
     } else
-      setLift(Math.max(0, Math.min(held.travel * 1.5, held.y - event.clientY)));
+      setLift(
+        Math.max(0, Math.min(1.5, (held.y - event.clientY) / held.travel)),
+      );
   }
   function end(event: PointerEvent<HTMLButtonElement>) {
     const held = lease.current;
@@ -409,7 +413,7 @@ export default function DecadeExperience() {
     } else {
       const committed = held.y - event.clientY >= held.travel * SNAP_THRESHOLD;
       dispatch({ type: "EJECT_RELEASE", committed });
-      setLift(0);
+      if (!committed) setLift(0);
       if (!committed) setNotice("Pull the card farther upward to release it.");
     }
   }
@@ -473,7 +477,7 @@ export default function DecadeExperience() {
     "--dock": dock,
     "--energy": model.state === "transforming" ? frame.energy : 0,
     "--scan": model.state === "transforming" ? frame.scan : 0,
-    "--lift": lift + "px",
+    "--card-pull": lift,
   } as CSSProperties;
   const pointerHandlers = {
     onPointerMove: move,
@@ -615,24 +619,17 @@ export default function DecadeExperience() {
           </span>
         </div>
         <div className="driver-hardware">
-          {selected && (
-            <div
-              className={
-                "loaded-card" +
-                (model.state === "inserting" ? " card-inserting" : "") +
-                (model.state === "ejecting" && model.settling
-                  ? " card-ejecting"
-                  : "")
-              }
-              style={
-                { "--card-accent": selected.mainCard.accent } as CSSProperties
-              }
-              aria-hidden="true"
-            >
-              <CardFace project={selected} />
-            </div>
-          )}
           <DecadriverModel
+            card={selected}
+            cardPhase={
+              model.state === "inserting"
+                ? "inserting"
+                : model.state === "ejecting"
+                  ? model.settling
+                    ? "ejecting"
+                    : "pulling"
+                  : "seated"
+            }
             activated={
               model.state === "active" || model.state === "transforming"
             }
@@ -675,7 +672,7 @@ export default function DecadeExperience() {
             }}
           >
             <span aria-hidden="true">
-              {model.cardId ? "↑ CARD SET" : "↓ INSERT"}
+              {model.cardId ? "↑ EJECT" : "↓ INSERT"}
             </span>
           </button>
           {([-1, 1] as const).map((side) => (

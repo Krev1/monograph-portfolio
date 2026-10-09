@@ -89,3 +89,23 @@ Native browser gestures on 390 × 844 completed open → vertical insertion of c
 Active 320 × 568: document height remains 568 px; handles are 60.2 × 66.8 px, and the hardware starts at 428.8 px. The stage has been extended safely toward the dock after this measurement. Final production-build screenshots and exact-head CI/preview checks are supplied with the updated delivery report.
 
 F01–F04/F07: photographed closed/open/loaded hardware and directed cycle. F05: existing controller/reducer suite plus native gestures. F06: viewport table, bounded stage and ability selection. F08: production build, type check and source review. The video remains unavailable; exact film mechanics/timing and physical-device tests are not claimed.
+
+## Seated card / circular lens revision — 2026-10-09
+
+Specified before editing in `docs/CARD-READER-FIDELITY.md`, against `1593ec0ebf936b5d0697ebeacb73a4f29011f438`. This section supersedes the earlier protruding-card implementation. The newly supplied YouTube video `1io0g-4Sz3A` was played and inspected around 3:01 and 3:37–3:47; the seated card is enclosed with a small visible section in the upper groove, and its symbol appears on the circular lens. Earlier unavailable-video statements refer to the original `mA9z6rS1uMc` reference, not this new video.
+
+The full original card is drawn behind the casing. Its only seated view is a 65×53 SVG aperture in the left horizontal groove; it rotates to the top when open. A recessed rim, inner shadow and retaining lip hide the card edges. External card artwork exists only during insertion or extraction. The shared ledger, brackets and monogram paths supply both the deck cards and the lens. Reading completes before the lens identifies the card, while project disclosure remains gated by Henshin. The lens symbol counter-rotates with the face and remains upright. Extraction keeps the identity until successful completion; cancellation returns the same card to its enclosed position.
+
+**Local gates:** 31/31 tests pass, including all three card identities before Henshin, through closure/activation/reopening, and clearing after extraction. Cancelled extraction restores the recessed card and its symbol. TypeScript passes. Production build succeeds: 15 kB route / 118 kB first-load JavaScript. No rendering dependency was added. React review: reusable typed symbol paths, memoized hardware, unique SVG definition IDs, retained pointer ownership/deadline cleanup, native keyboard/tap controls and reduced-motion rules.
+
+**Native browser evidence:** The production build completed a desktop pointer opening → downward SpendWise insertion → inward closure → active project. The loaded state had no external transient card; its ledger symbol was visible before Henshin. Reopening retained it, and pulling upward from the groove cleared both displays. Learn changed the lens to brackets. At 390×844, native upward extraction and downward insertion of KREV1 succeeded, and the monogram appeared in the lens. Keyboard closure at 320×568 retained that monogram after Henshin. No console warnings/errors were returned during the tested flow.
+
+| Viewport | Open groove target | Result |
+| --- | --- | --- |
+| 1440×900 | 120.4×87.5 CSS px | Fully enclosed loaded card; native complete cycle; no horizontal overflow |
+| 390×844 | 70.2×44 CSS px | Native extraction and insertion; correct monogram; no horizontal overflow |
+| 320×568 | 54.9×44 CSS px | Enclosed card; short-screen scrolling; no horizontal overflow |
+
+Active 320×568: stage bottom 400.8 px, hardware top 428.8 px; the card strip stays inside the left groove and the symbol remains centered. The disabled ejection target is scaled with the active dock; reopening restores its measured open size before extraction is enabled.
+
+C01/C03: open and closed production screenshots plus clipped SVG aperture. C02/C04: three-card controller tests and native switching/extraction. C05/C06: native gestures, regression tests and target measurements above. C07: local gates; exact revision remote checks are recorded in the delivered report. Physical touchscreen devices and other browser engines remain outside the observed test coverage.

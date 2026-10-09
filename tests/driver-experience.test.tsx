@@ -167,8 +167,11 @@ describe("Controller integration", () => {
     fireEvent.pointerMove(handle, { pointerId: 1, clientX: 300 });
     fireEvent.lostPointerCapture(handle, { pointerId: 1 });
     expect(state()).toBe("loaded");
-    expect(document.querySelector(".loaded-card")!.textContent).toContain(
-      "SPENDWISE AI",
+    expect(screen.getByTestId("seated-card").getAttribute("data-card-id")).toBe(
+      "001",
+    );
+    expect(screen.getByTestId("lens-emblem").getAttribute("data-emblem")).toBe(
+      "ledger",
     );
   });
   it("reopens and ejects before activating a different project", async () => {
@@ -222,5 +225,82 @@ describe("Controller integration", () => {
     expect(cleared).toHaveBeenCalledWith(deadline);
     await advance(5000);
     expect(document.querySelector("main")).toBeNull();
+  });
+});
+
+describe("Recessed card reader", () => {
+  it.each([
+    ["SPENDWISE AI", "001", "ledger"],
+    ["LEARN", "002", "brackets"],
+    ["KREV1 PORTFOLIO", "003", "monogram"],
+  ])(
+    "reads %s into the lens before Henshin and retains it through reopening",
+    async (name, id, emblem) => {
+      render(<DecadeExperience />);
+      expect(screen.queryByTestId("lens-emblem")).toBeNull();
+      await open();
+      fireEvent.click(card(name));
+      expect(state()).toBe("inserting");
+      expect(screen.queryByTestId("lens-emblem")).toBeNull();
+      expect(screen.getByTestId("transient-card")).toBeTruthy();
+      await advance(320);
+      expect(screen.queryByTestId("transient-card")).toBeNull();
+      expect(
+        screen.getByTestId("reader-card-window").getAttribute("data-card-id"),
+      ).toBe(id);
+      const identity = () => {
+        expect(
+          screen.getByTestId("lens-emblem").getAttribute("data-card-id"),
+        ).toBe(id);
+        expect(
+          screen.getByTestId("lens-emblem").getAttribute("data-emblem"),
+        ).toBe(emblem);
+      };
+      identity();
+      expect(screen.queryByTestId("project-stage")).toBeNull();
+      fireEvent.keyDown(left(), { key: "ArrowRight" });
+      identity();
+      await advance(180);
+      identity();
+      await advance(1500);
+      identity();
+      fireEvent.keyDown(left(), { key: "ArrowLeft" });
+      identity();
+      await advance(180);
+      expect(state()).toBe("loaded");
+      identity();
+      fireEvent.keyDown(screen.getByRole("button", { name: /Eject loaded/ }), {
+        key: "ArrowUp",
+      });
+      identity();
+      await advance(280);
+      expect(state()).toBe("open");
+      expect(screen.queryByTestId("lens-emblem")).toBeNull();
+      expect(screen.queryByTestId("seated-card")).toBeNull();
+    },
+  );
+  it("cancelled extraction restores the enclosed card and its lens identity", async () => {
+    render(<DecadeExperience />);
+    await load();
+    const slot = screen.getByRole("button", { name: /Eject loaded/ });
+    fireEvent.pointerDown(slot, { pointerId: 1, clientY: 450 });
+    fireEvent.pointerMove(slot, { pointerId: 1, clientY: 370 });
+    expect(state()).toBe("ejecting");
+    expect(screen.getByTestId("transient-card")).toBeTruthy();
+    expect(
+      screen.getByTestId("driver-scene").style.getPropertyValue("--card-pull"),
+    ).not.toBe("0");
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(state()).toBe("loaded");
+    expect(screen.queryByTestId("transient-card")).toBeNull();
+    expect(
+      screen.getByTestId("driver-scene").style.getPropertyValue("--card-pull"),
+    ).toBe("0");
+    expect(screen.getByTestId("lens-emblem").getAttribute("data-card-id")).toBe(
+      "001",
+    );
+    expect(screen.getByTestId("seated-card").getAttribute("data-card-id")).toBe(
+      "001",
+    );
   });
 });

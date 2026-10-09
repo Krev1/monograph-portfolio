@@ -34,6 +34,7 @@ Optional **Keyboard & tap controls** exposes equivalent operations one step at a
 
 - [Specification, research and transition table](docs/SDD-DECADE-DRIVER.md)
 - [Visual fidelity revision and acceptance](docs/VISUAL-FIDELITY.md)
+- [Seated card, groove and circular lens specification](docs/CARD-READER-FIDELITY.md)
 - [Verification and delivery record](docs/VERIFICATION.md)
 - `src/lib/driver-machine.ts`: pure guarded transitions and run tokens
 - `src/lib/driver-geometry.ts`: scale-aware gestures and slot attraction

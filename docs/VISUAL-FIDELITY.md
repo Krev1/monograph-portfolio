@@ -2,6 +2,8 @@
 
 Date: 2026-10-09. User request: make the existing Driver resemble the reference more closely and add detail. Baseline review commit: `02c04693cb08d4ff3523eea8a69b0f2a764caad7`.
 
+Later refinement: the user's annotated groove/lens request and newly accessible CSM demonstration are specified in [CARD-READER-FIDELITY.md](CARD-READER-FIDELITY.md). That revision replaces the protruding loaded card with an enclosed card segment and matching lens symbol. Unavailable-video notes below describe the earlier reference study.
+
 ## Study and decisions — recorded before implementation
 
 The official [Toei product photograph](https://www.kamen-rider-official.com/zukan/items/272), already downloaded and inspected, is the visual reference. The previous SVG has a tall octagonal face, oversized solid grips, repeated star marks and strongly luminous colored pods. The photograph instead shows a broad curved ivory face, compact open grips, a thinner midline, small different black marks, muted translucent pods and a polished silver annulus around a reflective dark lens.
