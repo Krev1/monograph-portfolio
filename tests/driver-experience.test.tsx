@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import DecadeExperience from "../src/components/decade-experience";
-import { CARD_INSERT_DURATION } from "../src/lib/driver-timeline";
+import {
+  CARD_INSERT_DURATION,
+  HENSHIN_DURATION,
+} from "../src/lib/driver-timeline";
 const advance = async (time: number) => {
   await act(async () => {
     await vi.advanceTimersByTimeAsync(time);
@@ -33,6 +36,60 @@ beforeEach(() => {
   );
 });
 describe("Controller integration", () => {
+  it.each(["SPENDWISE AI", "LEARN", "KREV1 PORTFOLIO"])(
+    "choosing %s while closed opens before inserting, and never skips Henshin",
+    async (name) => {
+      render(<DecadeExperience />);
+      expect((card(name) as HTMLButtonElement).disabled).toBe(false);
+      fireEvent.click(card(name), { detail: 1 });
+      expect(state()).toBe("opening");
+      expect(screen.queryByTestId("seated-card")).toBeNull();
+      await advance(179);
+      expect(state()).toBe("opening");
+      await advance(1);
+      expect(state()).toBe("inserting");
+      expect(screen.queryByTestId("project-stage")).toBeNull();
+      await advance(CARD_INSERT_DURATION);
+      expect(state()).toBe("loaded");
+      fireEvent.keyDown(left(), { key: "ArrowRight" });
+      await advance(180);
+      await advance(HENSHIN_DURATION - 1);
+      expect(state()).toBe("transforming");
+      expect(screen.queryByTestId("project-stage")).toBeNull();
+      await advance(1);
+      expect(state()).toBe("active");
+      expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(name);
+    },
+  );
+  it("inserts a stationary pointer tap on an open reader exactly once", async () => {
+    render(<DecadeExperience />);
+    await open();
+    fireEvent.pointerDown(card(), { pointerId: 1, clientX: 100, clientY: 200 });
+    fireEvent.pointerMove(card(), { pointerId: 1, clientX: 102, clientY: 201 });
+    expect(state()).toBe("cardDragging");
+    fireEvent.pointerUp(card(), { pointerId: 1, clientX: 102, clientY: 201 });
+    expect(state()).toBe("inserting");
+    fireEvent.click(card(), { detail: 1 });
+    await advance(CARD_INSERT_DURATION);
+    expect(state()).toBe("loaded");
+  });
+  it("invalid and cancelled drags ignore their trailing clicks, including returning to the start", async () => {
+    render(<DecadeExperience />);
+    await open();
+    fireEvent.pointerDown(card(), { pointerId: 1, clientX: 100, clientY: 200 });
+    fireEvent.pointerMove(card(), { pointerId: 1, clientX: 150, clientY: 240 });
+    fireEvent.pointerUp(card(), { pointerId: 1, clientX: 100, clientY: 200 });
+    fireEvent.click(card(), { detail: 1 });
+    expect(state()).toBe("open");
+    fireEvent.pointerDown(card(), { pointerId: 2, clientX: 100, clientY: 200 });
+    fireEvent.pointerCancel(card(), { pointerId: 2 });
+    fireEvent.click(card(), { detail: 1 });
+    expect(state()).toBe("open");
+    fireEvent.pointerDown(card(), { pointerId: 3, clientX: 100, clientY: 200 });
+    fireEvent.pointerUp(card(), { pointerId: 3, clientX: 100, clientY: 200 });
+    await advance(CARD_INSERT_DURATION);
+    expect(state()).toBe("loaded");
+  });
   it.each(["full", "reduced"])(
     "closes an empty reader through tap controls in %s motion without Henshin",
     async (mode) => {
@@ -63,7 +120,7 @@ describe("Controller integration", () => {
       expect(screen.queryByTestId("project-stage")).toBeNull();
       await advance(1);
       expect(state()).toBe("idle");
-      await advance(1500);
+      await advance(HENSHIN_DURATION);
       expect(state()).toBe("idle");
       expect(screen.queryByTestId("lens-emblem")).toBeNull();
       expect(screen.queryByTestId("project-stage")).toBeNull();
@@ -120,7 +177,7 @@ describe("Controller integration", () => {
     fireEvent.click(screen.getByRole("button", { name: "Push handles in" }));
     await advance(180);
     expect(screen.queryByTestId("project-stage")).toBeNull();
-    await advance(1500);
+    await advance(HENSHIN_DURATION);
     expect(state()).toBe("active");
   });
   it("losing window focus cancels a held gesture", () => {
@@ -140,7 +197,7 @@ describe("Controller integration", () => {
     await advance(180);
     expect(state()).toBe("transforming");
     expect(screen.queryByTestId("project-stage")).toBeNull();
-    await advance(1499);
+    await advance(HENSHIN_DURATION - 1);
     expect(screen.queryByTestId("project-stage")).toBeNull();
     await advance(1);
     expect(state()).toBe("active");
@@ -247,7 +304,7 @@ describe("Controller integration", () => {
     await load();
     fireEvent.keyDown(left(), { key: "ArrowRight" });
     await advance(180);
-    await advance(1500);
+    await advance(HENSHIN_DURATION);
     fireEvent.keyDown(left(), { key: "ArrowLeft" });
     expect(screen.queryByTestId("project-stage")).toBeNull();
     await advance(180);
@@ -261,7 +318,7 @@ describe("Controller integration", () => {
     await advance(CARD_INSERT_DURATION);
     fireEvent.keyDown(left(), { key: "ArrowRight" });
     await advance(180);
-    await advance(1500);
+    await advance(HENSHIN_DURATION);
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("LEARN");
   });
   it("completes reduced motion without animationend and cancels timers on unmount", async () => {
@@ -425,7 +482,7 @@ describe("Recessed card reader", () => {
           .querySelector('radialGradient[id$="-activated"] stop')!
           .getAttribute("stop-color"),
       ).toBe(accent);
-      await advance(1500);
+      await advance(HENSHIN_DURATION);
       identity();
       fireEvent.keyDown(left(), { key: "ArrowLeft" });
       identity();
@@ -581,8 +638,7 @@ describe("Physical card scale", () => {
   );
   it("rescales all cards and cancels a held gesture when the scene resizes, then disconnects on unmount", async () => {
     let resized:
-      | ((entries: { contentRect: { width: number } }[]) => void)
-      | undefined;
+      ((entries: { contentRect: { width: number } }[]) => void) | undefined;
     const observe = vi.fn(),
       disconnect = vi.fn();
     vi.stubGlobal(

@@ -1,6 +1,6 @@
 # KREV1 — DECADE DRIVER PORTFOLIO
 
-A single-page portfolio discovered through an original mechanical card reader. Pull a handle, insert a project card, push inward to transform, then explore the project and its evidenced ability cards. Reopen and pull the card upward to change projects.
+A single-page portfolio discovered through an original mechanical card reader. Choose a card to open and load automatically, or pull a handle and drag a card into the reader; push inward to transform, then explore the project and its evidenced ability cards. Reopen and pull the card upward to change projects.
 
 Built with Next.js App Router, React, TypeScript, SVG and CSS. An unofficial fan concept informed by official Decadriver references; artwork, project emblems and optional synthesized sounds are original. No official image, logo or sampled transformation audio is shipped.
 
@@ -23,7 +23,7 @@ For development, use `npm run dev`. The production site is connected to the exis
 | Operation         | Pointer                                                      | Keyboard                                        |
 | ----------------- | ------------------------------------------------------------ | ----------------------------------------------- |
 | Open / reopen     | Pull left handle left, or right handle right                 | Focus handle; use outward arrow, Enter or Space |
-| Insert            | Drag a deck card downward into the highlighted mouth         | Enter / Space on a card after opening           |
+| Insert            | Click a card while closed to open/load; tap or drag into the groove when open         | Enter / Space on a card; closed Driver opens first           |
 | Close / transform | Push either handle inward                                    | Use inward arrow, Enter or Space                |
 | Eject             | Pull the exposed card upward while open                      | Arrow Up / Enter on loaded card                 |
 | Cancel            | Release short of the lock; cancelled capture restores origin | Escape during a drag                            |
@@ -45,6 +45,7 @@ An empty open Driver can also close. It returns to standby; transformation and p
 - [Continuous card mechanics, rotating lens print and rear carrier branding](docs/CONTINUOUS-CARD-MECHANICS.md)
 - [Recessed entry, integrated carrier and empty closure](docs/RECESSED-ENTRY-EMPTY-CLOSURE.md)
 - [Card feedback, Henshin colors and electronic reader audio](docs/CARD-FEEDBACK-HENSHIN-AUDIO.md)
+- [One-shot arrival, closed-driver card selection and reader rhythm](docs/ENTRY-CARD-SELECTION-AUDIO.md)
 - [Original announcement provenance](public/audio/PROVENANCE.md)
 - [Verification and delivery record](docs/VERIFICATION.md)
 - `src/lib/driver-machine.ts`: pure guarded transitions and run tokens

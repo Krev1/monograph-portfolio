@@ -79,15 +79,15 @@ export function driverSoundScore(
       ];
     case "insert":
       return [
-        noise(0, 0.16, 800, 4300, 0.08, 5),
-        tone(0.015, 0.3, 540, 3900, 0.055, "sawtooth", -0.35),
+        noise(0, 0.075, 3100, 6500, 0.12, 3),
+        tone(0.012, 0.095, 2300, 720, 0.085, "square", -0.2),
         ...Array.from({ length: 8 }, (_, i) =>
           tone(
-            0.02 + i * 0.033,
-            0.021,
-            1500 + i * 210,
-            1900 + i * 190,
-            0.04,
+            0.015 + i * 0.012,
+            0.009,
+            1800 + i * 260,
+            2200 + i * 210,
+            0.045,
             "square",
             i % 2 ? 0.4 : -0.4,
           ),
@@ -95,35 +95,36 @@ export function driverSoundScore(
         {
           kind: "voice",
           voice: "ride",
-          at: 0.095,
-          duration: 0.504,
+          at: 0.105,
+          duration: 0.76,
           gain: 0.48,
         },
       ];
     case "henshin": {
       const cues: SoundCue[] = [
-        noise(0, 0.09, 4800, 800, 0.15, 1),
-        tone(0, 0.22, 190, 48, 0.14, "sine"),
-        noise(0.28, 0.43, 750, 6200, 0.055, 4),
-        tone(0.22, 0.65, 320, 3700, 0.035, "sawtooth", 0.25),
+        noise(0, 0.065, 5400, 1400, 0.17, 1),
+        tone(0, 0.19, 155, 44, 0.15, "sine"),
+        tone(0.018, 0.075, 2100, 620, 0.07, "square"),
+        noise(1.08, 0.55, 700, 6800, 0.07, 4),
+        tone(1.05, 0.83, 240, 4600, 0.035, "sawtooth", 0.25),
       ];
       if (cardId)
         cues.push({
           kind: "voice",
           voice: cardId,
-          at: 0.16,
-          duration: 0.65,
+          at: 0.14,
+          duration: 0.98,
           gain: 0.52,
         });
-      const notes = [1, 1.1892, 1.4983, 2, 1.4983, 1.1892, 2, 2.9966];
+      const notes = [4, 2, 4, 3, 6, 3, 6, 4, 8, 4, 8, 6];
       notes.forEach((ratio, i) =>
         cues.push(
           tone(
-            0.3 + i * 0.085,
-            0.14,
-            base * ratio * 2,
-            base * ratio * 2.02,
-            0.055,
+            1.04 + i * 0.068,
+            0.053,
+            base * ratio,
+            base * ratio * 1.22,
+            0.065,
             "square",
             i % 2 ? 0.3 : -0.3,
           ),
@@ -132,8 +133,8 @@ export function driverSoundScore(
       [1, 1.1892, 1.4983, 2].forEach((ratio, i) =>
         cues.push({
           ...tone(
-            1.02,
-            0.46,
+            1.92,
+            0.45,
             base * ratio,
             base * ratio,
             0.065,
@@ -144,8 +145,8 @@ export function driverSoundScore(
         }),
       );
       cues.push(
-        noise(1.03, 0.36, 5600, 500, 0.045, 1),
-        tone(1.02, 0.46, base / 2, base / 2, 0.13, "sine"),
+        noise(1.92, 0.4, 6400, 450, 0.06, 1),
+        tone(1.92, 0.45, base / 2, base / 2, 0.15, "sine"),
       );
       return cues;
     }

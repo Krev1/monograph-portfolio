@@ -193,31 +193,39 @@ export class DriverAudio {
       return;
     }
     if (this.standby) return;
-    const oscillator = this.context.createOscillator(),
-      pulse = this.context.createOscillator();
-    const gain = this.context.createGain(),
-      modulation = this.context.createGain();
-    oscillator.type = "triangle";
-    oscillator.frequency.value = 343;
-    pulse.frequency.value = 16;
-    gain.gain.value = 0.018;
-    modulation.gain.value = 0.014;
-    oscillator.connect(gain);
-    pulse.connect(modulation);
-    modulation.connect(gain.gain);
+    const pulse = this.context.createBufferSource();
+    const buffer = this.context.createBuffer(
+      1,
+      this.context.sampleRate,
+      this.context.sampleRate,
+    );
+    const samples = buffer.getChannelData(0);
+    // Alternating scanner pulses with silent gaps, rather than a continuous hum.
+    const notes = [587.33, 0, 880, 0, 587.33, 880, 1174.66, 0];
+    for (let i = 0; i < samples.length; i++) {
+      const time = i / this.context.sampleRate;
+      const position = (time * 8) % 1;
+      const frequency = notes[Math.floor(time * 8)];
+      const edge = Math.min(1, position * 16, (1 - position) * 16);
+      samples[i] =
+        Math.sin(2 * Math.PI * frequency * time) *
+        edge *
+        Math.exp(-position * 4);
+    }
+    pulse.buffer = buffer;
+    pulse.loop = true;
+    const gain = this.context.createGain();
+    gain.gain.value = 0.045;
+    pulse.connect(gain);
     gain.connect(this.master);
-    oscillator.start();
     pulse.start();
     this.standby = {
       stop: () => {
-        for (const source of [oscillator, pulse]) {
-          try {
-            source.stop();
-          } catch {}
-          source.disconnect();
-        }
+        try {
+          pulse.stop();
+        } catch {}
+        pulse.disconnect();
         gain.disconnect();
-        modulation.disconnect();
       },
     };
   }

@@ -5,6 +5,11 @@ import { DriverAudio, scheduleDriverSound } from "../src/lib/driver-audio";
 import { DRIVER_VOICES, driverSoundScore } from "../src/lib/driver-sound-score";
 import DecadeExperience from "../src/components/decade-experience";
 
+import {
+  CARD_INSERT_DURATION,
+  HENSHIN_DURATION,
+} from "../src/lib/driver-timeline";
+
 class Param {
   value = 0;
   setValueAtTime = vi.fn();
@@ -95,7 +100,11 @@ describe("Original reader audio", () => {
         for (const cue of score) {
           expect(cue.at).toBeGreaterThanOrEqual(0);
           expect(cue.duration).toBeGreaterThan(0);
-          expect(cue.at + cue.duration + 0.02).toBeLessThanOrEqual(1.5);
+          expect(cue.at + cue.duration + 0.02).toBeLessThanOrEqual(
+            sound === "henshin"
+              ? HENSHIN_DURATION / 1000
+              : CARD_INSERT_DURATION / 1000,
+          );
           expect(cue.gain).toBeGreaterThan(0);
           expect(cue.gain).toBeLessThanOrEqual(0.52);
         }
@@ -167,7 +176,7 @@ describe("Original reader audio", () => {
       expect(file.readUInt16LE(22)).toBe(1);
       expect(file.readUInt32LE(24)).toBe(24000);
       expect(file.readUInt16LE(34)).toBe(16);
-      expect(file.length).toBeLessThan(32000);
+      expect(file.length).toBeLessThan(48000);
       for (let i = 44; i < file.length; i += 2)
         expect(Math.abs(file.readInt16LE(i)) / 32768).toBeLessThanOrEqual(
           0.821,
@@ -193,7 +202,7 @@ describe("Original reader audio", () => {
       screen.getByRole("button", { name: "Insert LEARN project card" }),
     );
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(620);
+      await vi.advanceTimersByTimeAsync(CARD_INSERT_DURATION);
     });
     fireEvent.keyDown(handle, { key: "ArrowRight" });
     await act(async () => {
@@ -204,7 +213,7 @@ describe("Original reader audio", () => {
       "transforming",
     );
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(1500);
+      await vi.advanceTimersByTimeAsync(HENSHIN_DURATION);
     });
     expect(document.querySelector("main")!.getAttribute("data-state")).toBe(
       "active",

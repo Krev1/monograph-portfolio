@@ -192,17 +192,17 @@ describe("Scale-aware geometry", () => {
 describe("Directed timeline", () => {
   it.each([
     [0, "lock"],
-    [150, "scan"],
-    [300, "energize"],
-    [550, "identify"],
-    [850, "dock"],
+    [240, "scan"],
+    [480, "energize"],
+    [880, "identify"],
+    [1360, "dock"],
   ])("maps %i ms to %s", (time, phase) => {
     expect(henshinFrame(Number(time)).phase).toBe(phase);
   });
   it("does not dock before recognition and ends exactly", () => {
-    expect(henshinFrame(800).dock).toBe(0);
-    expect(henshinFrame(1500).dock).toBe(1);
-    expect(henshinFrame(1500).identity).toBe(0);
+    expect(henshinFrame(1280).dock).toBe(0);
+    expect(henshinFrame(2400).dock).toBe(1);
+    expect(henshinFrame(2400).identity).toBe(0);
   });
   it("reduced motion has no energy sweep and reaches the same dock", () => {
     expect(henshinFrame(100, true)).toMatchObject({

@@ -494,12 +494,6 @@ function DecadriverModel({
                 stroke="#53656b"
                 strokeWidth="1.5"
               />
-              <path
-                className="dx-slot-ready"
-                d="M297 237H367M297 286H367"
-                stroke="#dc95ba"
-                strokeWidth="1.2"
-              />
             </g>
             <path
               d="M333 161Q382 97 464 117M536 117Q615 99 667 161"

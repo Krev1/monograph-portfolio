@@ -42,6 +42,7 @@ type Lease = { pointerId: number; target: HTMLButtonElement } & (
       anchorY: number;
       width: number;
       height: number;
+      dragged: boolean;
     }
   | { kind: "eject"; y: number; travel: number; scale: number }
 );
@@ -92,6 +93,19 @@ export default function DecadeExperience() {
   const [tapControls, setTapControls] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [notice, setNotice] = useState("");
+  const [queuedCard, setQueuedCard] = useState<ProjectId | null>(null);
+  const [entering, setEntering] = useState(true);
+  const suppressCardClick = useRef(false);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setEntering(false), 1200);
+    return () => window.clearTimeout(timer);
+  }, []);
+  useEffect(() => {
+    if (model.state === "open" && queuedCard) {
+      dispatch({ type: "INSERT_KEY", cardId: queuedCard });
+      setQueuedCard(null);
+    }
+  }, [model.state, queuedCard]);
   const deviceReduced = useReducedMotion();
   const [motionMode, setMotionMode] = useState<MotionMode>("full");
   useEffect(() => {
@@ -321,6 +335,7 @@ export default function DecadeExperience() {
     releaseLease();
     setGhost(null);
     setLift(0);
+    if (held.kind === "card") suppressCardClick.current = true;
     dispatch({
       type:
         held.kind === "handle"
@@ -411,6 +426,7 @@ export default function DecadeExperience() {
       anchorY,
       width,
       height,
+      dragged: false,
     });
     setGhost({
       cardId,
@@ -458,6 +474,8 @@ export default function DecadeExperience() {
         openness: held.closing ? 1 - progress : progress,
       });
     } else if (held.kind === "card") {
+      held.dragged ||=
+        Math.hypot(event.clientX - held.x, event.clientY - held.y) >= 8;
       const slot = slotRef.current?.getBoundingClientRect() ?? null;
       const attraction = attractCard(
         { x: event.clientX, y: event.clientY },
@@ -514,10 +532,21 @@ export default function DecadeExperience() {
         slot,
         held.previousX,
       );
+      suppressCardClick.current = true;
+      if (
+        !held.dragged &&
+        Math.hypot(event.clientX - held.x, event.clientY - held.y) < 8
+      ) {
+        dispatch({ type: "CARD_CANCEL" });
+        dispatch({ type: "INSERT_KEY", cardId: held.cardId });
+        return;
+      }
       const valid = validDrop({ x: held.x, y: held.y }, aligned, slot);
       dispatch({ type: "CARD_DROP", valid });
       if (!valid)
-        setNotice("Card returned. Drag downward into the highlighted slot.");
+        setNotice(
+          "Card returned. Drag downward into the reader groove, or tap a card.",
+        );
     } else {
       const committed = held.y - event.clientY >= held.travel * SNAP_THRESHOLD;
       dispatch({ type: "EJECT_RELEASE", committed });
@@ -547,12 +576,17 @@ export default function DecadeExperience() {
   function insertKey(cardId: ProjectId) {
     if (!lease.current) {
       setNotice("");
-      dispatch({ type: "INSERT_KEY", cardId });
+      if (modelRef.current.state === "idle") {
+        setQueuedCard(cardId);
+        dispatch({ type: "HANDLE_KEY" });
+      } else dispatch({ type: "INSERT_KEY", cardId });
     }
   }
   const status = {
     idle: "PULL SIDE HANDLES TO OPEN",
-    opening: "OPENING — PULL TO THE LOCK",
+    opening: queuedCard
+      ? "OPENING — CARD SELECTED"
+      : "OPENING — PULL TO THE LOCK",
     open: "INSERT PROJECT CARD",
     cardDragging: ghost?.aligned
       ? "SLOT ALIGNED — RELEASE TO INSERT"
@@ -621,10 +655,13 @@ export default function DecadeExperience() {
         "experience state-" +
         model.state +
         (reduced ? " reduced-motion" : "") +
-        (motionMode === "full" ? " full-motion" : "")
+        (motionMode === "full" ? " full-motion" : "") +
+        (entering ? " is-entering" : "")
       }
       data-state={model.state}
       style={experienceStyle}
+      onPointerDownCapture={() => setEntering(false)}
+      onKeyDownCapture={() => setEntering(false)}
     >
       <header className="experience-header">
         <a className="wordmark" href="/" aria-label="KREV1 home">
@@ -671,14 +708,16 @@ export default function DecadeExperience() {
         <p>
           {notice ||
             (model.state === "idle"
-              ? "Hold either handle. Pull outward."
-              : model.state === "open"
-                ? "Insert a card, or push the handles inward to close."
-                : model.state === "loaded"
-                  ? "Close to transform, or pull the card upward to eject."
-                  : model.state === "active"
-                    ? "Explore the abilities. Your next project starts at the Driver."
-                    : "The mechanism follows your movement.")}
+              ? "Choose a card to open and load, or pull either handle outward."
+              : queuedCard
+                ? "The Driver is opening to load your selected card."
+                : model.state === "open"
+                  ? "Insert a card, or push the handles inward to close."
+                  : model.state === "loaded"
+                    ? "Close to transform, or pull the card upward to eject."
+                    : model.state === "active"
+                      ? "Explore the abilities. Your next project starts at the Driver."
+                      : "The mechanism follows your movement.")}
         </p>
       </div>
       {deckVisible && (
@@ -689,39 +728,54 @@ export default function DecadeExperience() {
           </div>
           <div className="project-card-row">
             {driverProjects.map((project, index) => (
-              <button
+              <div
+                className="project-card-entry"
                 key={project.id}
-                ref={index === 0 ? firstCardRef : undefined}
-                type="button"
-                className={
-                  "project-card" +
-                  (model.cardId === project.id ? " is-in-driver" : "") +
-                  (ghost?.cardId === project.id ? " is-held" : "")
-                }
-                style={
-                  { "--card-accent": project.mainCard.accent } as CSSProperties
-                }
-                disabled={
-                  !(
-                    model.state === "open" ||
-                    (model.state === "cardDragging" &&
-                      model.draggingId === project.id)
-                  )
-                }
-                aria-label={"Insert " + project.title + " project card"}
-                aria-describedby={
-                  model.cardId === project.id
-                    ? "input-help occupied-card-note"
-                    : "input-help"
-                }
-                onPointerDown={(event) => startCard(event, project.id)}
-                {...pointerHandlers}
-                onClick={(event) => {
-                  if (event.detail === 0 || tapControls) insertKey(project.id);
-                }}
+                style={{ "--entry-order": index } as CSSProperties}
               >
-                <CardFace project={project} />
-              </button>
+                <button
+                  ref={index === 0 ? firstCardRef : undefined}
+                  type="button"
+                  className={
+                    "project-card" +
+                    (model.cardId === project.id ? " is-in-driver" : "") +
+                    (ghost?.cardId === project.id ? " is-held" : "")
+                  }
+                  style={
+                    {
+                      "--card-accent": project.mainCard.accent,
+                    } as CSSProperties
+                  }
+                  disabled={
+                    !(
+                      model.state === "idle" ||
+                      model.state === "open" ||
+                      (model.state === "cardDragging" &&
+                        model.draggingId === project.id)
+                    )
+                  }
+                  aria-label={"Insert " + project.title + " project card"}
+                  aria-describedby={
+                    model.cardId === project.id
+                      ? "input-help occupied-card-note"
+                      : "input-help"
+                  }
+                  onPointerDown={(event) => {
+                    suppressCardClick.current = false;
+                    startCard(event, project.id);
+                  }}
+                  {...pointerHandlers}
+                  onClick={(event) => {
+                    if (suppressCardClick.current && event.detail !== 0) {
+                      suppressCardClick.current = false;
+                      return;
+                    }
+                    insertKey(project.id);
+                  }}
+                >
+                  <CardFace project={project} />
+                </button>
+              </div>
             ))}
           </div>
         </section>
@@ -749,111 +803,115 @@ export default function DecadeExperience() {
         style={sceneStyle}
         data-testid="driver-scene"
       >
-        <div className="driver-caption" aria-hidden="true">
-          <span>KREV1 / DEVICE 01</span>
-          <span>
-            {model.cardId ? "CARD " + model.cardId + " SET" : "READER STANDBY"}
-          </span>
-        </div>
-        <div className="driver-hardware">
-          <DecadriverModel
-            card={selected}
-            cardPhase={
-              model.state === "inserting"
-                ? "inserting"
-                : model.state === "ejecting"
-                  ? model.settling
-                    ? "ejecting"
-                    : "pulling"
-                  : "seated"
-            }
-            activated={
-              model.state === "active" || model.state === "transforming"
-            }
-          />
-          <div className="energy-ring" aria-hidden="true" />
-          <button
-            ref={slotRef}
-            type="button"
-            className="card-mouth"
-            aria-label={
-              model.cardId
-                ? "Eject loaded project card. Pull up or press Arrow Up"
-                : "Project card insertion slot"
-            }
-            aria-describedby="input-help"
-            disabled={
-              !(
-                model.state === "loaded" ||
-                (model.state === "ejecting" && !model.settling)
-              )
-            }
-            onPointerDown={startEject}
-            {...pointerHandlers}
-            onKeyDown={(event) => {
-              if (
-                event.key === "ArrowUp" &&
-                model.state === "loaded" &&
-                !lease.current
-              ) {
-                event.preventDefault();
-                setNotice("");
-                dispatch({ type: "EJECT_KEY" });
+        <div className="driver-arrival">
+          <div className="driver-caption" aria-hidden="true">
+            <span>KREV1 / DEVICE 01</span>
+            <span>
+              {model.cardId
+                ? "CARD " + model.cardId + " SET"
+                : "READER STANDBY"}
+            </span>
+          </div>
+          <div className="driver-hardware">
+            <DecadriverModel
+              card={selected}
+              cardPhase={
+                model.state === "inserting"
+                  ? "inserting"
+                  : model.state === "ejecting"
+                    ? model.settling
+                      ? "ejecting"
+                      : "pulling"
+                    : "seated"
               }
-            }}
-            onClick={(event) => {
-              if (event.detail === 0 && model.state === "loaded") {
-                setNotice("");
-                dispatch({ type: "EJECT_KEY" });
+              activated={
+                model.state === "active" || model.state === "transforming"
               }
-            }}
-          />
-          {([-1, 1] as const).map((side) => (
+            />
+            <div className="energy-ring" aria-hidden="true" />
             <button
-              ref={side === -1 ? leftRef : undefined}
-              key={side}
+              ref={slotRef}
               type="button"
-              className={"handle handle-" + (side === -1 ? "left" : "right")}
+              className="card-mouth"
               aria-label={
-                (side === -1 ? "Left" : "Right") +
-                " handle. " +
-                (closingReady || model.state === "closing"
-                  ? "Push inward to close"
-                  : "Pull outward to open")
+                model.cardId
+                  ? "Eject loaded project card. Pull up or press Arrow Up"
+                  : "Project card insertion slot"
               }
               aria-describedby="input-help"
-              disabled={!handlesReady && !moving}
-              onPointerDown={(event) => startHandle(event, side)}
+              disabled={
+                !(
+                  model.state === "loaded" ||
+                  (model.state === "ejecting" && !model.settling)
+                )
+              }
+              onPointerDown={startEject}
               {...pointerHandlers}
-              onKeyDown={(event) => handleKey(event, side)}
-              onClick={(event) => {
-                if (event.detail === 0 && handlesReady && !lease.current) {
+              onKeyDown={(event) => {
+                if (
+                  event.key === "ArrowUp" &&
+                  model.state === "loaded" &&
+                  !lease.current
+                ) {
+                  event.preventDefault();
                   setNotice("");
-                  dispatch({ type: "HANDLE_KEY" });
+                  dispatch({ type: "EJECT_KEY" });
                 }
               }}
-            >
-              <span aria-hidden="true">
-                {closingReady || model.state === "closing"
-                  ? side === -1
-                    ? "PUSH →"
-                    : "← PUSH"
-                  : side === -1
-                    ? "← PULL"
-                    : "PULL →"}
-              </span>
-            </button>
-          ))}
+              onClick={(event) => {
+                if (event.detail === 0 && model.state === "loaded") {
+                  setNotice("");
+                  dispatch({ type: "EJECT_KEY" });
+                }
+              }}
+            />
+            {([-1, 1] as const).map((side) => (
+              <button
+                ref={side === -1 ? leftRef : undefined}
+                key={side}
+                type="button"
+                className={"handle handle-" + (side === -1 ? "left" : "right")}
+                aria-label={
+                  (side === -1 ? "Left" : "Right") +
+                  " handle. " +
+                  (closingReady || model.state === "closing"
+                    ? "Push inward to close"
+                    : "Pull outward to open")
+                }
+                aria-describedby="input-help"
+                disabled={!handlesReady && !moving}
+                onPointerDown={(event) => startHandle(event, side)}
+                {...pointerHandlers}
+                onKeyDown={(event) => handleKey(event, side)}
+                onClick={(event) => {
+                  if (event.detail === 0 && handlesReady && !lease.current) {
+                    setNotice("");
+                    dispatch({ type: "HANDLE_KEY" });
+                  }
+                }}
+              >
+                <span aria-hidden="true">
+                  {closingReady || model.state === "closing"
+                    ? side === -1
+                      ? "PUSH →"
+                      : "← PUSH"
+                    : side === -1
+                      ? "← PULL"
+                      : "PULL →"}
+                </span>
+              </button>
+            ))}
+          </div>
+          <p className="device-help" aria-hidden="true">
+            {model.state === "active"
+              ? "PULL TO REOPEN"
+              : moving
+                ? Math.round(model.openness * 100) + "% / MECHANICAL TRAVEL"
+                : model.state === "open" || model.state === "cardDragging"
+                  ? "VERTICAL READER / READY"
+                  : "LINKED HANDLES / QUARTER-TURN READER"}
+          </p>
         </div>
-        <p className="device-help" aria-hidden="true">
-          {model.state === "active"
-            ? "PULL TO REOPEN"
-            : moving
-              ? Math.round(model.openness * 100) + "% / MECHANICAL TRAVEL"
-              : model.state === "open" || model.state === "cardDragging"
-                ? "VERTICAL READER / READY"
-                : "LINKED HANDLES / QUARTER-TURN READER"}
-        </p>
       </div>
       {model.state === "transforming" && (
         <div
@@ -883,9 +941,9 @@ export default function DecadeExperience() {
         >
           <CardFace
             readerSide={ghost.aligned}
-            project={
-              driverProjects.find((project) => project.id === ghost.cardId)!
-            }
+            project={driverProjects.find(
+              (project) => project.id === ghost.cardId,
+            )!}
           />
         </div>
       )}
@@ -904,8 +962,9 @@ export default function DecadeExperience() {
           Pull the left handle with Arrow Left or the right with Arrow Right.
           When open, reverse the arrow to close with or without a card. Enter or
           Space performs the current handle operation. On an open Driver, Enter
-          on a project card inserts it. Arrow Up or Enter on the loaded card
-          ejects it. Escape cancels a drag.
+          on a project card inserts it. Choosing a card while closed opens the
+          Driver and loads that card. Tap a card or drag it down when open.
+          Arrow Up or Enter on the loaded card ejects it. Escape cancels a drag.
         </p>
         {model.cardId && (
           <span id="occupied-card-note" className="sr-only">

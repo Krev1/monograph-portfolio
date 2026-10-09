@@ -1,6 +1,6 @@
 import { clamp } from "./driver-machine";
-export const CARD_INSERT_DURATION = 620;
-export const HENSHIN_DURATION = 1500;
+export const CARD_INSERT_DURATION = 900;
+export const HENSHIN_DURATION = 2400;
 export function henshinFrame(elapsed: number, reduced = false) {
   if (reduced)
     return {
@@ -10,6 +10,8 @@ export function henshinFrame(elapsed: number, reduced = false) {
       identity: 0,
       dock: clamp(elapsed / 100),
     };
+  // Keep the mechanical phase proportions while allowing the announcement room.
+  elapsed *= 1500 / HENSHIN_DURATION;
   return {
     phase:
       elapsed < 150
