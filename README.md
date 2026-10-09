@@ -1,18 +1,43 @@
-# MONOGRAPH — Developer Portfolio
+# KREV1 — DECADE DRIVER PORTFOLIO
 
-Minimalist portfolio built with Next.js, TypeScript, and React. Includes selected projects, CV, contact, and live public GitHub repositories from [@Krev1](https://github.com/Krev1).
+A single-page portfolio discovered through an original mechanical card reader. Pull a handle, insert a project card, push inward to transform, then explore the project and its evidenced ability cards. Reopen and pull the card upward to change projects.
 
-## Run locally
+Built with Next.js App Router, React, TypeScript, SVG and CSS. An unofficial fan concept informed by official Decadriver references; artwork, project emblems and optional synthesized sounds are original. No official image, logo or sampled transformation audio is shipped.
 
-```bash
-npm install
-npm run dev
+## Run and verify
+
+Node.js 24 and npm:
+
+```sh
+npm ci
+npm test
+npm run typecheck
+npm run build
+npm start
 ```
 
-Open http://localhost:3000.
+For development, use `npm run dev`. The production site is connected to the existing Vercel project; feature branches produce review previews when Git integration permits them. CI runs type checks, tests and a production build.
 
-## Configure
+## Controls
 
-Update `src/data/site.ts` with your real details and project links. Add `public/resume.pdf` before enabling Resume download. Sample projects and contact details should be replaced before publishing. GitHub repository list reads public data from the GitHub REST API without a token.
+| Operation         | Pointer                                                      | Keyboard                                        |
+| ----------------- | ------------------------------------------------------------ | ----------------------------------------------- |
+| Open / reopen     | Pull left handle left, or right handle right                 | Focus handle; use outward arrow, Enter or Space |
+| Insert            | Drag a deck card downward into the highlighted mouth         | Enter / Space on a card after opening           |
+| Close / transform | Push either handle inward                                    | Use inward arrow, Enter or Space                |
+| Eject             | Pull the exposed card upward while open                      | Arrow Up / Enter on loaded card                 |
+| Cancel            | Release short of the lock; cancelled capture restores origin | Escape during a drag                            |
 
-Deploy with Vercel after running `npm run build`. 
+Optional **Keyboard & tap controls** exposes equivalent operations one step at a time. Reduced motion shortens effects and preserves every logical step. Sound defaults off.
+
+## Specification and evidence
+
+- [Specification, research and transition table](docs/SDD-DECADE-DRIVER.md)
+- [Verification and delivery record](docs/VERIFICATION.md)
+- `src/lib/driver-machine.ts`: pure guarded transitions and run tokens
+- `src/lib/driver-geometry.ts`: scale-aware gestures and slot attraction
+- `src/lib/driver-timeline.ts`: one directed Henshin timeline
+- `src/data/driver-projects.ts`: complete types and repository-pinned evidence
+- `tests/`: state-machine, geometry, timeline and controller tests
+
+SpendWise is in progress: Python transaction / CSV tooling and synthetic baseline experiments are implemented; its complete web application and production ML pipeline are future work. Learn is an ongoing public study track. Concept visuals are labeled and do not represent completed product screenshots. Static audited content keeps project discovery independent of GitHub rate limits; source links enable verification.

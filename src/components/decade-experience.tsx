@@ -1,168 +1,822 @@
 "use client";
-
-import {useEffect, useRef, useState} from "react";
-import type {CSSProperties, KeyboardEvent, PointerEvent} from "react";
-import {projects, profile} from "@/data/site";
+import { useEffect, useReducer, useRef, useState } from "react";
+import type { CSSProperties, KeyboardEvent, PointerEvent } from "react";
+import { driverProjects } from "@/data/driver-projects";
+import type { PortfolioProject } from "@/data/driver-projects";
+import { driverReducer, initialDriver } from "@/lib/driver-machine";
+import type { ProjectId } from "@/lib/driver-machine";
+import {
+  attractCard,
+  handleProgress,
+  SNAP_THRESHOLD,
+  validDrop,
+} from "@/lib/driver-geometry";
+import { henshinFrame, HENSHIN_DURATION } from "@/lib/driver-timeline";
 import DecadriverModel from "./decadriver-model";
+import ProjectStage, { CardEmblem } from "./project-stage";
 
-type Phase="locked"|"open"|"loaded"|"transforming"|"active"|"reopened"|"ejecting";
-type Direction=-1|1;
-type Ability={label:string;type:"SKILL"|"TOOL"|"PROCESS";description:string};
-type CardDrag={id:string;x:number;y:number};
-type Gesture={x:number;y:number;side:Direction};
-const THRESHOLD_X=65;
-const THRESHOLD_Y=55;
-type Sfx="open"|"insert"|"henshin"|"ability"|"eject";
-const tones:Record<Sfx,Array<[number,number,number,OscillatorType]>>={
- open:[[190,0,.08,"square"],[310,.085,.12,"triangle"]],
- insert:[[440,0,.055,"triangle"],[660,.07,.06,"sine"],[880,.14,.13,"sine"]],
- henshin:[[135,0,.16,"sawtooth"],[180,.17,.15,"sawtooth"],[370,.36,.17,"triangle"],[550,.55,.15,"triangle"],[740,.73,.24,"sine"]],
- ability:[[495,0,.08,"triangle"],[740,.09,.13,"sine"]],
- eject:[[440,0,.09,"sine"],[260,.1,.14,"triangle"]]
+type Lease = { pointerId: number; target: HTMLButtonElement } & (
+  | {
+      kind: "handle";
+      x: number;
+      side: -1 | 1;
+      closing: boolean;
+      travel: number;
+    }
+  | { kind: "card"; x: number; y: number; previousX: number; cardId: ProjectId }
+  | { kind: "eject"; y: number; travel: number }
+);
+type Ghost = {
+  cardId: ProjectId;
+  x: number;
+  y: number;
+  tilt: number;
+  aligned: boolean;
 };
-
-const abilities:Record<string,Ability[]>={
- "001":[
-  {label:"PYTHON",type:"TOOL",description:"Python is used for transaction and CSV tooling, data preparation and experimental scripts."},
-  {label:"DATA",type:"SKILL",description:"Synthetic transaction records and documented data processing steps support early experiments. No real-world dataset performance is claimed."},
-  {label:"AI BASELINES",type:"PROCESS",description:"Keyword and Dummy baselines are exploratory prototypes. The production ML pipeline and full application are not finished."},
-  {label:"TESTING",type:"SKILL",description:"Automated checks, tests and technical task gates provide engineering evidence during development."},
-  {label:"PRODUCT THINKING",type:"PROCESS",description:"Budgeting and spending insights are defined in product specifications; completed UI research and user testing are future work."}
- ],
- "002":[
-  {label:"PYTHON",type:"SKILL",description:"Practice with Python concepts through recorded lessons and coding exercises."},
-  {label:"DOCUMENTATION",type:"PROCESS",description:"A public learning track records exercises and decisions while building stronger foundations."},
-  {label:"GITHUB",type:"TOOL",description:"Git and GitHub organize learning material and track progress."}
- ],
- "003":[
-  {label:"UI / UX",type:"SKILL",description:"A one-screen interaction design using intentional hierarchy, card metaphors and state-based feedback."},
-  {label:"NEXT.JS",type:"TOOL",description:"React components and the Next.js App Router render the portfolio."},
-  {label:"TYPESCRIPT",type:"TOOL",description:"Strongly typed project data and gesture handlers keep the interface maintainable."},
-  {label:"CSS MOTION",type:"SKILL",description:"Original CSS transforms, keyframes and reduced-motion support create the transformation sequence."},
-  {label:"GITHUB",type:"TOOL",description:"Source control and public repository links document the work."}
- ]
+type Sound = "snap" | "insert" | "henshin" | "ability" | "eject";
+const tones: Record<Sound, number[]> = {
+  snap: [180, 280],
+  insert: [440, 660, 880],
+  henshin: [130, 220, 440, 660, 880],
+  ability: [520, 780],
+  eject: [440, 260],
 };
-
-function Art({id}:{id:string}){
- if(id==="001")return <div className="ex-visual ex-visual-finance" aria-label="Abstract finance data visual, not a product screenshot" role="img"><div className="ex-art-overline">SPENDWISE / EXPERIMENTAL DATA</div><div className="ex-chart"><div className="ex-chart-grid"/><svg viewBox="0 0 520 250" preserveAspectRatio="none" aria-hidden="true"><path d="M0 213 C80 206 82 90 149 112 S263 215 321 124 S431 102 520 23" stroke="#FF4EB1" strokeWidth="4" fill="none"/><path d="M0 213 C80 206 82 90 149 112 S263 215 321 124 S431 102 520 23 L520 250 L0 250Z" fill="url(#exFade)" opacity=".38"/><defs><linearGradient id="exFade" x1="0" x2="0" y1="0" y2="1"><stop stopColor="#FF4EB1"/><stop offset="1" stopColor="#FF4EB1" stopOpacity="0"/></linearGradient></defs></svg></div><span className="ex-art-bottom">DATA → INSIGHT / CONCEPT</span></div>;
- if(id==="002")return <div className="ex-visual ex-visual-learn" role="img" aria-label="Abstract coding and learning concept visual"><div className="ex-art-overline">LEARN / CONTINUOUS PRACTICE</div><div className="ex-learn-mark"><span>PY</span><span>TH</span><span>ON</span></div><span className="ex-art-bottom">BUILD THE FOUNDATION / 001</span></div>;
- return <div className="ex-visual ex-visual-portfolio" role="img" aria-label="Abstract KREV1 interface visual"><div className="ex-art-overline">KREV1 / INTERACTION SYSTEM</div><div className="ex-portfolio-mark">K<span>·</span>1</div><span className="ex-art-bottom">DESIGN × ENGINEERING / 2026</span></div>;
+function CardFace({ project }: { project: PortfolioProject }) {
+  return (
+    <>
+      <span className="card-top">
+        <b>K / {project.id}</b>
+        <span>PROJECT CARD</span>
+      </span>
+      <span className="card-emblem">
+        <CardEmblem emblem={project.mainCard.emblem} />
+      </span>
+      <strong>
+        {project.title === "KREV1 PORTFOLIO" ? "KREV1" : project.title}
+      </strong>
+      <span className="card-bottom">
+        <span>{project.mainCard.code}</span>
+        <i aria-hidden="true" />
+      </span>
+    </>
+  );
+}
+function useReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReduced(media.matches);
+    const update = () => setReduced(media.matches);
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+  return reduced;
 }
 
-function ProjectCard({id,index,disabled,onBegin,onMove,onEnd,onKeyboard}:{id:string;index:number;disabled:boolean;onBegin:(e:PointerEvent<HTMLButtonElement>,id:string)=>void;onMove:(e:PointerEvent<HTMLButtonElement>)=>void;onEnd:(e:PointerEvent<HTMLButtonElement>)=>void;onKeyboard:(id:string)=>void}){
- const p=projects.find(p=>p.id===id)!;
- return <button className={"ex-project-card ex-project-card-"+index} type="button" disabled={disabled} onPointerDown={e=>onBegin(e,id)} onPointerMove={onMove} onPointerUp={onEnd} onPointerCancel={onEnd} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();onKeyboard(id)}}} aria-label={p.title+" — drag vertically into the Driver slot"}>
-  <span className="ex-card-header"><b>KREV1 / {p.id}</b><span>RIDE / PROJECT</span></span>
-  <span className="ex-card-emblem" aria-hidden="true"><svg className="ex-card-sigil" viewBox="0 0 160 210" fill="none"><path d="M32 12L79 30L128 12L143 71L115 173L80 197L45 173L17 71Z" stroke="currentColor" strokeWidth="7"/><path d="M34 56L80 77L126 56M48 80L80 99L112 80M56 114L80 129L104 114" stroke="currentColor" strokeWidth="8"/><path d="M57 151L80 169L103 151" stroke="currentColor" strokeWidth="7"/></svg><b>{String(index+1).padStart(2,"0")}</b></span>
-  <strong>{p.title}</strong><span className="ex-card-footer"><span>{p.type}</span><span className="ex-barcode" aria-hidden="true"/></span><span className="ex-card-side-stripes" aria-hidden="true"/>
- </button>;
-}
+export default function DecadeExperience() {
+  const [model, dispatch] = useReducer(driverReducer, initialDriver);
+  const [ghost, setGhost] = useState<Ghost | null>(null);
+  const [lift, setLift] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
+  const [abilityId, setAbilityId] = useState<string | null>(null);
+  const [tapControls, setTapControls] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  const [notice, setNotice] = useState("");
+  const reduced = useReducedMotion();
+  const lease = useRef<Lease | null>(null);
+  const modelRef = useRef(model);
+  modelRef.current = model;
+  const sceneRef = useRef<HTMLDivElement>(null);
+  const slotRef = useRef<HTMLButtonElement>(null);
+  const leftRef = useRef<HTMLButtonElement>(null);
+  const firstCardRef = useRef<HTMLButtonElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const audioRef = useRef<AudioContext | null>(null);
+  const previousState = useRef(model.state);
+  const soundedRun = useRef(-1);
+  const selected = driverProjects.find(
+    (project) => project.id === model.cardId,
+  );
+  const moving =
+    ["opening", "closing", "reopening"].includes(model.state) &&
+    !model.settling;
+  const handlesReady = ["idle", "active", "loaded"].includes(model.state);
+  const frame = henshinFrame(elapsed, reduced);
+  const dock =
+    model.state === "active"
+      ? 1
+      : model.state === "reopening"
+        ? 1 - model.openness
+        : model.state === "transforming"
+          ? frame.dock
+          : 0;
+  function sound(type: Sound) {
+    if (!soundEnabled) return;
+    try {
+      const context = audioRef.current ?? new AudioContext();
+      audioRef.current = context;
+      void context.resume().catch(() => {});
+      tones[type].forEach((frequency, index) => {
+        const start = context.currentTime + index * 0.075;
+        const oscillator = context.createOscillator(),
+          gain = context.createGain();
+        oscillator.type = type === "snap" ? "triangle" : "sine";
+        oscillator.frequency.setValueAtTime(frequency, start);
+        gain.gain.setValueAtTime(0.0001, start);
+        gain.gain.exponentialRampToValueAtTime(0.025, start + 0.012);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.11);
+        oscillator.connect(gain);
+        gain.connect(context.destination);
+        oscillator.start(start);
+        oscillator.stop(start + 0.12);
+        oscillator.onended = () => {
+          oscillator.disconnect();
+          gain.disconnect();
+        };
+      });
+    } catch {
+      /* Optional audio does not affect the mechanical cycle. */
+    }
+  }
+  const soundRef = useRef(sound);
+  soundRef.current = sound;
+  useEffect(
+    () => () => {
+      if (audioRef.current) void audioRef.current.close().catch(() => {});
+    },
+    [],
+  );
 
-export default function DecadeExperience(){
- const [phase,setPhase]=useState<Phase>("locked");
- const [openDirection,setOpenDirection]=useState<Direction|null>(null);
- const [projectId,setProjectId]=useState<string|null>(null);
- const [activeAbility,setActiveAbility]=useState<number|null>(null);
- const [gripMotion,setGripMotion]=useState<number|null>(null);
- const [activeGrip,setActiveGrip]=useState<Direction|null>(null);
- const [cardDrag,setCardDrag]=useState<CardDrag|null>(null);
- const [slotLift,setSlotLift]=useState(0);
- const [cycle,setCycle]=useState(0);
- const [soundEnabled,setSoundEnabled]=useState(false);
- const audioContext=useRef<AudioContext|null>(null);
- const playSfx=(type:Sfx)=>{
-  if(!soundEnabled)return;
-  try{
-   const ctx=audioContext.current??new AudioContext();audioContext.current=ctx;void ctx.resume();const now=ctx.currentTime;
-   tones[type].forEach(([hz,delay,duration,wave])=>{
-    const osc=ctx.createOscillator();const gain=ctx.createGain();const start=now+delay;
-    osc.type=wave;osc.frequency.setValueAtTime(hz,start);osc.frequency.exponentialRampToValueAtTime(hz*1.14,start+duration);
-    gain.gain.setValueAtTime(.0001,start);gain.gain.exponentialRampToValueAtTime(.045,start+.02);gain.gain.exponentialRampToValueAtTime(.0001,start+duration);
-    osc.connect(gain);gain.connect(ctx.destination);osc.start(start);osc.stop(start+duration+.015);
-   });
-  }catch{/* Audio is optional; gesture experience remains usable. */}
- };
- const gripStart=useRef<Gesture|null>(null);
- const dragStart=useRef<{id:string;x:number;y:number}|null>(null);
- const ejectStart=useRef<number|null>(null);
- const slotRef=useRef<HTMLButtonElement|null>(null);
- useEffect(()=>()=>{if(audioContext.current)void audioContext.current.close()},[]);
- const liveProject=projects.find(p=>p.id===projectId);
- const modules=projectId?abilities[projectId]||[]:[];
- const isOpen=phase==="open"||phase==="reopened"||phase==="loaded"||phase==="ejecting";
- const canInsert=phase==="open"&&!projectId;
- const openProgress=gripMotion??(isOpen?1:0);
- const hasCard=Boolean(liveProject);
- 
- useEffect(()=>{if(phase!=="transforming")return;const timer=window.setTimeout(()=>{setPhase("active");setActiveAbility(null)},1080);return()=>window.clearTimeout(timer)},[phase]);
- useEffect(()=>{if(phase!=="ejecting")return;const timer=window.setTimeout(()=>{setProjectId(null);setPhase("open");setSlotLift(0);setCycle(n=>n+1)},460);return()=>window.clearTimeout(timer)},[phase]);
- const beginOpen=(side:Direction)=>{playSfx("open");setOpenDirection(side);setPhase(phase==="active"?"reopened":"open");setActiveAbility(null);setCycle(n=>n+1)};
- const closeAndHenshin=()=>{if(phase!=="loaded")return;playSfx("henshin");setPhase("transforming");setCycle(n=>n+1)};
- const onGripDown=(e:PointerEvent<HTMLButtonElement>,side:Direction)=>{
-  if(phase!=="locked"&&phase!=="loaded"&&phase!=="active")return;
-  e.currentTarget.setPointerCapture(e.pointerId);
-  gripStart.current={x:e.clientX,y:e.clientY,side};
-  setActiveGrip(side);
-  setGripMotion(phase==="loaded"?1:0);
- };
- const onGripMove=(e:PointerEvent<HTMLButtonElement>)=>{
-  const g=gripStart.current;if(!g)return;
-  const outward=(e.clientX-g.x)*g.side;
-  const travel=phase==="loaded"?-outward:outward;
-  const fraction=Math.max(0,Math.min(1,travel/94));
-  setGripMotion(phase==="loaded"?1-fraction:fraction);
- };
- const onGripEnd=(e:PointerEvent<HTMLButtonElement>)=>{
-  const g=gripStart.current;
-  gripStart.current=null;setGripMotion(null);setActiveGrip(null);
-  if(!g)return;
-  const outward=(e.clientX-g.x)*g.side;
-  const travel=phase==="loaded"?-outward:outward;
-  if(travel<THRESHOLD_X)return;
-  if(phase==="loaded")closeAndHenshin();
-  else if(phase==="locked"||phase==="active")beginOpen(g.side);
- };
- const onGripCancel=()=>{gripStart.current=null;setGripMotion(null);setActiveGrip(null)};
- const onGripKey=(e:KeyboardEvent<HTMLButtonElement>,side:Direction)=>{
-  if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight")return;
-  e.preventDefault();
-  const arrow=e.key==="ArrowRight"?1:-1;
-  if(phase==="loaded"&&arrow===-side)closeAndHenshin();
-  else if((phase==="locked"||phase==="active")&&arrow===side)beginOpen(side);
- };
- const insert=(id:string)=>{if(!canInsert)return;playSfx("insert");setProjectId(id);setPhase("loaded");setActiveAbility(null);setCycle(n=>n+1)};
- const onCardDown=(e:PointerEvent<HTMLButtonElement>,id:string)=>{if(!canInsert)return;e.currentTarget.setPointerCapture(e.pointerId);dragStart.current={id,x:e.clientX,y:e.clientY};setCardDrag({id,x:e.clientX,y:e.clientY})};
- const onCardMove=(e:PointerEvent<HTMLButtonElement>)=>{if(!dragStart.current)return;setCardDrag({...dragStart.current,x:e.clientX,y:e.clientY})};
- const onCardEnd=(e:PointerEvent<HTMLButtonElement>)=>{
-  const start=dragStart.current;dragStart.current=null;setCardDrag(null);if(!start)return;
-  const rect=slotRef.current?.getBoundingClientRect();
-  const inside=!!rect&&e.clientX>=rect.left-28&&e.clientX<=rect.right+28&&e.clientY>=rect.top-32&&e.clientY<=rect.bottom+32;
-  if(inside&&e.clientY-start.y>50)insert(start.id);
- };
- const eject=()=>{if(phase!=="reopened")return;playSfx("eject");setPhase("ejecting");setSlotLift(0);setActiveAbility(null)};
- const onEjectDown=(e:PointerEvent<HTMLButtonElement>)=>{if(phase!=="reopened")return;e.currentTarget.setPointerCapture(e.pointerId);ejectStart.current=e.clientY;setSlotLift(0)};
- const onEjectMove=(e:PointerEvent<HTMLButtonElement>)=>{if(ejectStart.current===null)return;setSlotLift(Math.max(-105,Math.min(0,e.clientY-ejectStart.current)))};
- const onEjectEnd=(e:PointerEvent<HTMLButtonElement>)=>{const start=ejectStart.current;ejectStart.current=null;setSlotLift(0);if(start!==null&&e.clientY-start<-THRESHOLD_Y)eject()};
- const instructions:Record<Phase,string>={
-  locked:"01 / KÉO TAY NẮM DRIVER SANG TRÁI HOẶC PHẢI ĐỂ MỞ",
-  open:"02 / KÉO THẺ DỰ ÁN TỪ TRÊN XUỐNG KHE THẺ",
-  loaded:"03 / KÉO DRIVER NGƯỢC HƯỚNG ĐỂ ĐÓNG VÀ HENSHIN",
-  transforming:"TRANSFORMING / HENSHIN",
-  active:"PROJECT ACTIVE / KÉO DRIVER ĐỂ MỞ VÀ ĐỔI THẺ",
-  reopened:"04 / KÉO THẺ ĐANG CẮM LÊN TRÊN ĐỂ RÚT RA",
-  ejecting:"EJECTING / THẺ ĐANG ĐƯỢC RÚT RA"
- };
- const progress=phase==="locked"?1:phase==="open"?2:phase==="loaded"?3:phase==="transforming"?4:phase==="active"?5:6;
- return <main className={"ex-page ex-phase-"+phase} aria-label="KREV1 interactive portfolio">
-  <div className="ex-ambient" aria-hidden="true"/><div className="ex-grid" aria-hidden="true"/>
-  <header className="ex-header"><a href="/" className="ex-logo" aria-label="KREV1 home">KREV1<span>®</span></a><span className="ex-header-center">D E C A D E / P R O J E C T — S Y S T E M</span><div className="ex-header-actions"><button type="button" className="ex-sound-toggle" aria-pressed={soundEnabled} onClick={()=>setSoundEnabled(v=>!v)}>{soundEnabled?"SFX ON ◖))":"SFX OFF ◖"}</button><a href={profile.github} target="_blank" rel="noreferrer">SOURCE ↗</a></div></header>
-  <div className="ex-progress" aria-label={"Step "+progress+" of 6"}><span>PROJECT DRIVER</span><div className="ex-progress-bars">{Array.from({length:6},(_,i)=><i key={i} className={i<progress?"ex-progress-lit":""}/>)}</div><span>0{progress} / 06</span></div>
-  <div className="ex-status" aria-live="polite">{instructions[phase]}</div>
-  {(phase==="locked"||isOpen)&&<div className="ex-deck" aria-label="Project card deck"><div className="ex-deck-title"><span>PROJECT ARCHIVE</span><span>CHỌN THẺ → KÉO XUỐNG</span></div><div className="ex-card-row">{projects.map((p,i)=><ProjectCard key={p.id} id={p.id} index={i} disabled={!canInsert} onBegin={onCardDown} onMove={onCardMove} onEnd={onCardEnd} onKeyboard={insert}/>)}</div></div>}
-  {(phase==="active"||phase==="transforming")&&liveProject&&<section className="ex-stage" aria-labelledby="ex-project-title"><div className="ex-stage-meta"><span>PROJECT / {liveProject.id}</span><span>2026 — ACTIVE FORM</span></div><div className="ex-stage-main"><div className="ex-stage-copy"><p className="ex-kicker">TRANSFORMATION COMPLETE / {liveProject.type}</p><h1 id="ex-project-title">{liveProject.title}</h1><p>{liveProject.description}</p><div className="ex-stage-links">{liveProject.url&&<a href={liveProject.url} target="_blank" rel="noreferrer">VIEW REPOSITORY ↗</a>}</div></div><Art id={liveProject.id}/></div><div className="ex-ability-area"><span className="ex-ability-label">ABILITY CARDS / CHỌN KỸ NĂNG ĐỂ KÍCH HOẠT</span><div className="ex-ability-row">{modules.map((m,i)=><button className={"ex-ability-card "+(activeAbility===i?"ex-ability-selected":"")} type="button" key={m.label} onClick={()=>{playSfx("ability");setActiveAbility(i)}} aria-pressed={activeAbility===i}><small>{m.type} / 0{i+1}</small><strong>{m.label}</strong></button>)}</div><div className="ex-ability-details" aria-live="polite">{activeAbility===null?<p>SELECT AN ABILITY CARD TO REVEAL TOOLS, SKILLS AND PROCESS.</p>:<><span>{modules[activeAbility].type} ACTIVATED</span><strong>{modules[activeAbility].label}</strong><p>{modules[activeAbility].description}</p></>}</div></div></section>}
-  <div className={"ex-driver-zone "+(phase==="active"?"ex-driver-docked":"")}><div className="ex-driver-caption"><span>DECADE / DEVICE 01</span><span>{phase==="loaded"?"CARD SET":isOpen?"DRIVER OPEN":phase==="active"?"ACTIVE":"DRIVER LOCKED"}</span></div><div className={"ex-device "+(isOpen?"ex-device-open":"")+(phase==="transforming"?" ex-device-transform":"")+(activeGrip!==null?" ex-device-dragging":"")} style={{"--ex-open-p":openProgress} as CSSProperties} key={phase==="transforming"?"henshin-"+cycle:"device"}><DecadriverModel activated={phase==="active"||phase==="transforming"}/><div className="ex-belt ex-belt-left" aria-hidden="true"/><div className="ex-mechanism"><div className="ex-buckle-shell" aria-hidden="true"><svg viewBox="0 0 480 335" preserveAspectRatio="none"><path d="M88 9H392L454 61V274L392 326H88L26 274V61Z" fill="#D7CADB" stroke="#4A354E" strokeWidth="12"/><path d="M107 29H373L430 80V255L373 307H107L50 255V80Z" fill="#13101B" stroke="#FFFFFF" strokeWidth="5"/><path d="M108 41H146L100 88H67ZM372 41H334L380 88H413ZM108 296H146L100 249H67ZM372 296H334L380 249H413Z" fill="#A26C9D"/><path d="M88 155H131V180H88ZM349 155H392V180H349Z" fill="#FF42B2"/></svg></div><div className="ex-mechanism-tracks" aria-hidden="true"><i/><i/><i/></div><div className="ex-rotating-reader" aria-hidden="true"><div className="ex-rotating-reader-ring"/><div className="ex-reader-cross"><i/><i/><i/><i/></div><div className="ex-reader-rivet-markers"><span/><span/><span/><span/><span/><span/><span/><span/></div></div><div className="ex-gate ex-gate-left" aria-hidden="true"/><div className="ex-gate ex-gate-right" aria-hidden="true"/><div className="ex-slot-surround"><button ref={slotRef} type="button" className={"ex-slot "+(hasCard?"ex-slot-filled":"")} disabled={!(phase==="open"||phase==="reopened")} onPointerDown={onEjectDown} onPointerMove={onEjectMove} onPointerUp={onEjectEnd} onPointerCancel={onEjectEnd} onKeyDown={e=>{if(e.key==="ArrowUp"){e.preventDefault();eject()}}} aria-label={phase==="reopened"?"Swipe card upward to eject; press Arrow Up for keyboard":"Vertical card insertion slot"}><div className="ex-slot-rim"/>{liveProject?<div className="ex-slot-card" style={{transform:slotLift?"translateY("+slotLift+"px)":undefined}}><span>PROJECT / {liveProject.id}</span><strong>{liveProject.title}</strong><small>{phase==="reopened"?"↑ PULL OUT":phase==="loaded"?"READY":"ACTIVATED"}</small></div>:<span className="ex-slot-placeholder">↓<small>INSERT CARD</small></span>}</button></div><div className="ex-driver-core"><span>PROJECT / DRIVE</span><div className="ex-core-emblem" aria-hidden="true"><span/></div><small>KREV1 / SYSTEM 09</small></div><button className="ex-grip ex-grip-left" type="button" onPointerDown={e=>onGripDown(e,-1)} onPointerMove={onGripMove} onPointerUp={onGripEnd} onPointerCancel={onGripCancel} onKeyDown={e=>onGripKey(e,-1)} disabled={phase==="open"||phase==="reopened"||phase==="ejecting"||phase==="transforming"} aria-label={phase==="loaded"?"Push left handle inward to transform. Press Arrow Right":"Pull left handle outward to open. Press Arrow Left"}><span className="ex-grip-elements" aria-hidden="true"><i/><i/><i/></span><span className="ex-grip-label">◀ PULL</span></button><button className="ex-grip ex-grip-right" type="button" onPointerDown={e=>onGripDown(e,1)} onPointerMove={onGripMove} onPointerUp={onGripEnd} onPointerCancel={onGripCancel} onKeyDown={e=>onGripKey(e,1)} disabled={phase==="open"||phase==="reopened"||phase==="ejecting"||phase==="transforming"} aria-label={phase==="loaded"?"Push right handle inward to transform. Press Arrow Left":"Pull right handle outward to open. Press Arrow Right"}><span className="ex-grip-elements" aria-hidden="true"><i/><i/><i/></span><span className="ex-grip-label">PULL ▶</span></button><div className="ex-scan" aria-hidden="true"/></div><div className="ex-belt ex-belt-right" aria-hidden="true"/></div><div className="ex-driver-hint">{phase==="loaded"?"REVERSE DIRECTION TO HENSHIN":phase==="reopened"?"SWIPE INSERTED CARD UP TO EJECT":phase==="active"?"DRAG THE HANDLE TO REOPEN":"DRAG HANDLE LEFT OR RIGHT / USE ARROW KEYS"}</div></div>
-  <footer className="ex-footer"><span>© 2026 KREV1 — ORIGINAL INTERACTIVE PORTFOLIO</span><span>INSPIRED BY CARD TRANSFORMATION SYSTEMS</span></footer>
-  {phase==="transforming"&&<div className="ex-henshin" aria-live="assertive"><div className="ex-henshin-stripes" aria-hidden="true">{Array.from({length:9},(_,i)=><i key={i}/>)}</div><div className="ex-henshin-rings"/><div className="ex-henshin-core"><span>RIDE / {liveProject?.id}</span><strong>HENSHIN</strong><b>{liveProject?.title}</b><span>PROJECT SYSTEM / ACTIVATING</span></div></div>}
-  {cardDrag&&<div className="ex-card-ghost" style={{left:cardDrag.x,top:cardDrag.y}} aria-hidden="true"><span>PROJECT / {cardDrag.id}</span><strong>{projects.find(p=>p.id===cardDrag.id)?.title}</strong><span>↓ INSERT</span></div>}
- </main>;
+  // A run token and deadline complement RAF; CSS animationend is never required.
+  useEffect(() => {
+    const transforming = model.state === "transforming";
+    if (!transforming) setElapsed(0);
+    if (!transforming && !model.settling) return;
+    const duration = reduced
+      ? transforming
+        ? 100
+        : 60
+      : transforming
+        ? HENSHIN_DURATION
+        : model.state === "inserting"
+          ? 320
+          : model.state === "ejecting"
+            ? 280
+            : 180;
+    const start = performance.now();
+    let raf = 0,
+      done = false;
+    const finish = () => {
+      if (!done) {
+        done = true;
+        cancelAnimationFrame(raf);
+        dispatch({ type: "COMPLETE", run: model.run, state: model.state });
+      }
+    };
+    const tick = () => {
+      if (done) return;
+      const time = performance.now() - start;
+      if (transforming) setElapsed(Math.min(time, duration));
+      if (time >= duration) finish();
+      else if (transforming) raf = requestAnimationFrame(tick);
+    };
+    if (transforming) setElapsed(0);
+    if (soundedRun.current !== model.run) {
+      soundedRun.current = model.run;
+      soundRef.current(
+        transforming
+          ? "henshin"
+          : model.state === "inserting"
+            ? "insert"
+            : model.state === "ejecting"
+              ? "eject"
+              : "snap",
+      );
+    }
+    const timer = window.setTimeout(finish, duration);
+    if (transforming) raf = requestAnimationFrame(tick);
+    const visible = () => {
+      if (document.visibilityState === "visible") {
+        cancelAnimationFrame(raf);
+        tick();
+      }
+    };
+    document.addEventListener("visibilitychange", visible);
+    return () => {
+      done = true;
+      window.clearTimeout(timer);
+      cancelAnimationFrame(raf);
+      document.removeEventListener("visibilitychange", visible);
+    };
+  }, [model.state, model.settling, model.run, reduced]);
+  useEffect(() => {
+    const previous = previousState.current;
+    previousState.current = model.state;
+    if (model.state !== "active") setAbilityId(null);
+    if (model.state === "open")
+      firstCardRef.current?.focus({ preventScroll: true });
+    if (model.state === "loaded")
+      (previous === "reopening" ? slotRef : leftRef).current?.focus({
+        preventScroll: true,
+      });
+    if (model.state === "active") {
+      window.scrollTo({ top: 0, behavior: "instant" });
+      headingRef.current?.focus({ preventScroll: true });
+    }
+  }, [model.state]);
+  function releaseLease() {
+    const held = lease.current;
+    lease.current = null;
+    if (held)
+      try {
+        if (held.target.hasPointerCapture(held.pointerId))
+          held.target.releasePointerCapture(held.pointerId);
+      } catch {
+        /* Capture was already released. */
+      }
+  }
+  function cancelGesture(pointerId?: number) {
+    const held = lease.current;
+    if (!held || (pointerId !== undefined && pointerId !== held.pointerId))
+      return;
+    releaseLease();
+    setGhost(null);
+    setLift(0);
+    dispatch({
+      type:
+        held.kind === "handle"
+          ? "HANDLE_CANCEL"
+          : held.kind === "card"
+            ? "CARD_CANCEL"
+            : "EJECT_CANCEL",
+    });
+    setNotice("Gesture cancelled. The previous position is restored.");
+  }
+  const cancelRef = useRef(cancelGesture);
+  cancelRef.current = cancelGesture;
+  useEffect(() => {
+    const escape = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape" && lease.current) {
+        event.preventDefault();
+        cancelRef.current();
+      }
+    };
+    window.addEventListener("keydown", escape);
+    const blur = () => cancelRef.current();
+    window.addEventListener("blur", blur);
+    return () => {
+      window.removeEventListener("keydown", escape);
+      window.removeEventListener("blur", blur);
+    };
+  }, []);
+  function capture(event: PointerEvent<HTMLButtonElement>, held: Lease) {
+    event.preventDefault();
+    lease.current = held;
+    setNotice("");
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      /* Synthetic tests may not support capture. */
+    }
+  }
+  function startHandle(event: PointerEvent<HTMLButtonElement>, side: -1 | 1) {
+    if (
+      lease.current ||
+      !handlesReady ||
+      event.button !== 0 ||
+      event.isPrimary === false
+    )
+      return;
+    capture(event, {
+      kind: "handle",
+      pointerId: event.pointerId,
+      target: event.currentTarget,
+      x: event.clientX,
+      side,
+      closing: model.state === "loaded",
+      travel: Math.max(
+        28,
+        (sceneRef.current?.getBoundingClientRect().width ?? 600) * 0.11,
+      ),
+    });
+    dispatch({ type: "HANDLE_START" });
+  }
+  function startCard(
+    event: PointerEvent<HTMLButtonElement>,
+    cardId: ProjectId,
+  ) {
+    if (
+      lease.current ||
+      tapControls ||
+      model.state !== "open" ||
+      event.button !== 0 ||
+      event.isPrimary === false
+    )
+      return;
+    capture(event, {
+      kind: "card",
+      pointerId: event.pointerId,
+      target: event.currentTarget,
+      cardId,
+      x: event.clientX,
+      y: event.clientY,
+      previousX: event.clientX,
+    });
+    setGhost({
+      cardId,
+      x: event.clientX,
+      y: event.clientY,
+      tilt: 0,
+      aligned: false,
+    });
+    dispatch({ type: "CARD_START", cardId });
+  }
+  function startEject(event: PointerEvent<HTMLButtonElement>) {
+    if (
+      lease.current ||
+      model.state !== "loaded" ||
+      event.button !== 0 ||
+      event.isPrimary === false
+    )
+      return;
+    capture(event, {
+      kind: "eject",
+      pointerId: event.pointerId,
+      target: event.currentTarget,
+      y: event.clientY,
+      travel: Math.max(
+        35,
+        (slotRef.current?.getBoundingClientRect().width ?? 90) * 0.8,
+      ),
+    });
+    dispatch({ type: "EJECT_START" });
+  }
+  function move(event: PointerEvent<HTMLButtonElement>) {
+    const held = lease.current;
+    if (!held || event.pointerId !== held.pointerId) return;
+    if (held.kind === "handle") {
+      const progress = handleProgress(
+        held.x,
+        event.clientX,
+        held.side,
+        held.closing,
+        held.travel,
+      );
+      dispatch({
+        type: "HANDLE_MOVE",
+        openness: held.closing ? 1 - progress : progress,
+      });
+    } else if (held.kind === "card") {
+      const attraction = attractCard(
+        { x: event.clientX, y: event.clientY },
+        slotRef.current?.getBoundingClientRect() ?? null,
+        held.previousX,
+      );
+      setGhost({ cardId: held.cardId, ...attraction });
+      held.previousX = event.clientX;
+    } else
+      setLift(Math.max(0, Math.min(held.travel * 1.5, held.y - event.clientY)));
+  }
+  function end(event: PointerEvent<HTMLButtonElement>) {
+    const held = lease.current;
+    if (!held || event.pointerId !== held.pointerId) return;
+    releaseLease();
+    setGhost(null);
+    if (held.kind === "handle") {
+      const committed =
+        handleProgress(
+          held.x,
+          event.clientX,
+          held.side,
+          held.closing,
+          held.travel,
+        ) >= SNAP_THRESHOLD;
+      dispatch({ type: "HANDLE_RELEASE", committed });
+      if (!committed) setNotice("Pull farther to reach the mechanical lock.");
+    } else if (held.kind === "card") {
+      const slot = slotRef.current?.getBoundingClientRect() ?? null;
+      const aligned = attractCard(
+        { x: event.clientX, y: event.clientY },
+        slot,
+        held.previousX,
+      );
+      const valid = validDrop({ x: held.x, y: held.y }, aligned, slot);
+      dispatch({ type: "CARD_DROP", valid });
+      if (!valid)
+        setNotice("Card returned. Drag downward into the highlighted slot.");
+    } else {
+      const committed = held.y - event.clientY >= held.travel * SNAP_THRESHOLD;
+      dispatch({ type: "EJECT_RELEASE", committed });
+      setLift(0);
+      if (!committed) setNotice("Pull the card farther upward to release it.");
+    }
+  }
+  function handleKey(event: KeyboardEvent<HTMLButtonElement>, side: -1 | 1) {
+    if (
+      !handlesReady ||
+      lease.current ||
+      (event.key !== "ArrowLeft" && event.key !== "ArrowRight")
+    )
+      return;
+    event.preventDefault();
+    const direction = event.key === "ArrowLeft" ? -1 : 1;
+    if (direction === (model.state === "loaded" ? -side : side)) {
+      setNotice("");
+      dispatch({ type: "HANDLE_KEY" });
+    } else
+      setNotice(
+        model.state === "loaded"
+          ? "Push this handle inward to close."
+          : "Pull this handle outward to open.",
+      );
+  }
+  function insertKey(cardId: ProjectId) {
+    if (!lease.current) {
+      setNotice("");
+      dispatch({ type: "INSERT_KEY", cardId });
+    }
+  }
+  const status = {
+    idle: "PULL SIDE HANDLES TO OPEN",
+    opening: "OPENING — PULL TO THE LOCK",
+    open: "INSERT PROJECT CARD",
+    cardDragging: ghost?.aligned
+      ? "SLOT ALIGNED — RELEASE TO INSERT"
+      : "DRAG CARD DOWN TO THE READER",
+    inserting: "READING PROJECT CARD",
+    loaded: "CARD SET — PUSH HANDLES IN",
+    closing: "CLOSING — PUSH TO THE LOCK",
+    transforming: "HENSHIN — PROJECT RECOGNIZED",
+    active: "PROJECT ACTIVE — REOPEN TO CHANGE CARD",
+    reopening: "REOPENING — CARD RETAINED",
+    ejecting: "PULL CARD UP TO EJECT",
+  }[model.state];
+  const step =
+    model.state === "idle" || model.state === "opening"
+      ? 1
+      : model.state === "open" || model.state === "cardDragging"
+        ? 2
+        : model.state === "loaded" ||
+            model.state === "inserting" ||
+            model.state === "closing"
+          ? 3
+          : model.state === "transforming"
+            ? 4
+            : 5;
+  const deckVisible = !["active", "transforming", "reopening"].includes(
+    model.state,
+  );
+  const sceneStyle = {
+    "--open": model.openness,
+    "--dock": dock,
+    "--energy": model.state === "transforming" ? frame.energy : 0,
+    "--scan": model.state === "transforming" ? frame.scan : 0,
+    "--lift": lift + "px",
+  } as CSSProperties;
+  const pointerHandlers = {
+    onPointerMove: move,
+    onPointerUp: end,
+    onPointerCancel: (event: PointerEvent<HTMLButtonElement>) =>
+      cancelGesture(event.pointerId),
+    onLostPointerCapture: (event: PointerEvent<HTMLButtonElement>) =>
+      cancelGesture(event.pointerId),
+  };
+  return (
+    <main
+      className={
+        "experience state-" + model.state + (reduced ? " reduced-motion" : "")
+      }
+      data-state={model.state}
+    >
+      <header className="experience-header">
+        <a className="wordmark" href="/" aria-label="KREV1 home">
+          KREV<span>1</span>
+          <i />
+        </a>
+        <span className="header-label">DECADE / PROJECT DRIVER</span>
+        <div className="header-actions">
+          <button
+            type="button"
+            aria-pressed={soundEnabled}
+            onClick={() => setSoundEnabled((value) => !value)}
+          >
+            SOUND {soundEnabled ? "ON" : "OFF"}
+            <span aria-hidden="true">{soundEnabled ? "◖))" : "◖"}</span>
+          </button>
+          <a
+            href="https://github.com/Krev1"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Krev1 on GitHub"
+          >
+            GITHUB ↗
+          </a>
+        </div>
+      </header>
+      <div className="system-line">
+        <span>INTERACTIVE PORTFOLIO</span>
+        <div className="step-track" aria-label={"Step " + step + " of 5"}>
+          {[1, 2, 3, 4, 5].map((number) => (
+            <i key={number} className={number <= step ? "lit" : ""} />
+          ))}
+        </div>
+        <span>0{step} / 05</span>
+      </div>
+      <div
+        className="instruction"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        <span className="instruction-dot" />
+        <strong>{status}</strong>
+        <p>
+          {notice ||
+            (model.state === "idle"
+              ? "Hold either handle. Pull outward."
+              : model.state === "open"
+                ? "Choose a card. Keep it vertical. Drag down."
+                : model.state === "loaded"
+                  ? "Close to transform, or pull the card upward to eject."
+                  : model.state === "active"
+                    ? "Explore the abilities. Your next project starts at the Driver."
+                    : "The mechanism follows your movement.")}
+        </p>
+      </div>
+      {deckVisible && (
+        <section className="project-deck" aria-label="Project card deck">
+          <div className="deck-caption">
+            <span>PROJECT ARCHIVE</span>
+            <span>THREE CARDS / THREE WORLDS</span>
+          </div>
+          <div className="project-card-row">
+            {driverProjects.map((project, index) => (
+              <button
+                key={project.id}
+                ref={index === 0 ? firstCardRef : undefined}
+                type="button"
+                className={
+                  "project-card" +
+                  (ghost?.cardId === project.id ? " is-held" : "")
+                }
+                style={
+                  { "--card-accent": project.mainCard.accent } as CSSProperties
+                }
+                disabled={
+                  !(
+                    model.state === "open" ||
+                    (model.state === "cardDragging" &&
+                      model.draggingId === project.id)
+                  )
+                }
+                aria-label={"Insert " + project.title + " project card"}
+                aria-describedby="input-help"
+                onPointerDown={(event) => startCard(event, project.id)}
+                {...pointerHandlers}
+                onClick={(event) => {
+                  if (event.detail === 0 || tapControls) insertKey(project.id);
+                }}
+              >
+                <CardFace project={project} />
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+      {model.state === "active" && selected && (
+        <ProjectStage
+          project={selected}
+          abilityId={abilityId}
+          headingRef={headingRef}
+          onAbility={(id) => {
+            if (modelRef.current.state === "active") {
+              sound("ability");
+              setAbilityId(id);
+            }
+          }}
+        />
+      )}
+      <div
+        ref={sceneRef}
+        className={
+          "driver-scene" +
+          (moving ? " is-tracking" : "") +
+          (ghost?.aligned ? " slot-aligned" : "")
+        }
+        style={sceneStyle}
+        data-testid="driver-scene"
+      >
+        <div className="driver-caption" aria-hidden="true">
+          <span>KREV1 / DEVICE 01</span>
+          <span>
+            {model.cardId ? "CARD " + model.cardId + " SET" : "READER STANDBY"}
+          </span>
+        </div>
+        <div className="driver-hardware">
+          {selected && (
+            <div
+              className={
+                "loaded-card" +
+                (model.state === "inserting" ? " card-inserting" : "") +
+                (model.state === "ejecting" && model.settling
+                  ? " card-ejecting"
+                  : "")
+              }
+              style={
+                { "--card-accent": selected.mainCard.accent } as CSSProperties
+              }
+              aria-hidden="true"
+            >
+              <CardFace project={selected} />
+            </div>
+          )}
+          <DecadriverModel
+            activated={
+              model.state === "active" || model.state === "transforming"
+            }
+          />
+          <div className="energy-ring" aria-hidden="true" />
+          <button
+            ref={slotRef}
+            type="button"
+            className="card-mouth"
+            aria-label={
+              model.cardId
+                ? "Eject loaded project card. Pull up or press Arrow Up"
+                : "Project card insertion slot"
+            }
+            aria-describedby="input-help"
+            disabled={
+              !(
+                model.state === "loaded" ||
+                (model.state === "ejecting" && !model.settling)
+              )
+            }
+            onPointerDown={startEject}
+            {...pointerHandlers}
+            onKeyDown={(event) => {
+              if (
+                event.key === "ArrowUp" &&
+                model.state === "loaded" &&
+                !lease.current
+              ) {
+                event.preventDefault();
+                setNotice("");
+                dispatch({ type: "EJECT_KEY" });
+              }
+            }}
+            onClick={(event) => {
+              if (event.detail === 0 && model.state === "loaded") {
+                setNotice("");
+                dispatch({ type: "EJECT_KEY" });
+              }
+            }}
+          >
+            <span aria-hidden="true">
+              {model.cardId ? "↑ CARD SET" : "↓ INSERT"}
+            </span>
+          </button>
+          {([-1, 1] as const).map((side) => (
+            <button
+              ref={side === -1 ? leftRef : undefined}
+              key={side}
+              type="button"
+              className={"handle handle-" + (side === -1 ? "left" : "right")}
+              aria-label={
+                (side === -1 ? "Left" : "Right") +
+                " handle. " +
+                (model.state === "loaded" || model.state === "closing"
+                  ? "Push inward to close"
+                  : "Pull outward to open")
+              }
+              aria-describedby="input-help"
+              disabled={!handlesReady && !moving}
+              onPointerDown={(event) => startHandle(event, side)}
+              {...pointerHandlers}
+              onKeyDown={(event) => handleKey(event, side)}
+              onClick={(event) => {
+                if (event.detail === 0 && handlesReady && !lease.current) {
+                  setNotice("");
+                  dispatch({ type: "HANDLE_KEY" });
+                }
+              }}
+            >
+              <span aria-hidden="true">
+                {model.state === "loaded" || model.state === "closing"
+                  ? side === -1
+                    ? "PUSH →"
+                    : "← PUSH"
+                  : side === -1
+                    ? "← PULL"
+                    : "PULL →"}
+              </span>
+            </button>
+          ))}
+        </div>
+        <p className="device-help" aria-hidden="true">
+          {model.state === "active"
+            ? "PULL TO REOPEN"
+            : moving
+              ? Math.round(model.openness * 100) + "% / MECHANICAL TRAVEL"
+              : model.state === "open" || model.state === "cardDragging"
+                ? "VERTICAL READER / READY"
+                : "LINKED HANDLES / QUARTER-TURN READER"}
+        </p>
+      </div>
+      {model.state === "transforming" && (
+        <div
+          className="transformation-identity"
+          aria-hidden="true"
+          style={{ opacity: frame.identity }}
+        >
+          <span>PROJECT / {model.cardId}</span>
+          <strong>HENSHIN</strong>
+          <b>{selected?.title}</b>
+        </div>
+      )}
+      {ghost && (
+        <div
+          className="drag-card project-card"
+          style={
+            {
+              left: ghost.x,
+              top: ghost.y,
+              "--tilt": ghost.tilt + "deg",
+              "--card-accent": driverProjects.find(
+                (project) => project.id === ghost.cardId,
+              )!.mainCard.accent,
+            } as CSSProperties
+          }
+          aria-hidden="true"
+        >
+          <CardFace
+            project={driverProjects.find(
+              (project) => project.id === ghost.cardId,
+            )!}
+          />
+        </div>
+      )}
+      <div className="input-controls">
+        <button
+          type="button"
+          className="controls-toggle"
+          aria-expanded={tapControls}
+          aria-controls="tap-controls"
+          onClick={() => setTapControls((value) => !value)}
+        >
+          {tapControls ? "HIDE" : "KEYBOARD & TAP"} CONTROLS{" "}
+          <span aria-hidden="true">{tapControls ? "−" : "+"}</span>
+        </button>
+        <p id="input-help" className="sr-only">
+          Pull the left handle with Arrow Left or the right with Arrow Right.
+          When loaded, reverse the arrow to close. Enter or Space performs the
+          current handle operation. On an open Driver, Enter on a project card
+          inserts it. Arrow Up or Enter on the loaded card ejects it. Escape
+          cancels a drag.
+        </p>
+        {tapControls && (
+          <div className="tap-controls" id="tap-controls">
+            <p>
+              Same sequence, one step at a time. Use the cards above to insert
+              after opening.
+            </p>
+            <button
+              type="button"
+              disabled={!handlesReady || model.state === "loaded"}
+              onClick={() => {
+                setNotice("");
+                dispatch({ type: "HANDLE_KEY" });
+              }}
+            >
+              {model.state === "active" ? "Reopen Driver" : "Open Driver"}
+            </button>
+            <button
+              type="button"
+              disabled={model.state !== "loaded"}
+              onClick={() => {
+                setNotice("");
+                dispatch({ type: "HANDLE_KEY" });
+              }}
+            >
+              Push handles in
+            </button>
+            <button
+              type="button"
+              disabled={model.state !== "loaded"}
+              onClick={() => {
+                setNotice("");
+                dispatch({ type: "EJECT_KEY" });
+              }}
+            >
+              Pull card up
+            </button>
+          </div>
+        )}
+      </div>
+      <footer className="experience-footer">
+        <span>© 2026 KREV1</span>
+        <span>UNOFFICIAL FAN CONCEPT / ORIGINAL ART & SOUND</span>
+      </footer>
+    </main>
+  );
 }
