@@ -22,6 +22,7 @@ async function load() {
 }
 beforeEach(() => {
   vi.useFakeTimers();
+  window.localStorage.clear();
   vi.mocked(window.matchMedia).mockImplementation(
     () =>
       ({
@@ -207,6 +208,10 @@ describe("Controller integration", () => {
         }) as unknown as MediaQueryList,
     );
     const view = render(<DecadeExperience />);
+    fireEvent.click(screen.getByRole("button", { name: /KEYBOARD & TAP/ }));
+    fireEvent.change(screen.getByRole("combobox", { name: "Animation" }), {
+      target: { value: "auto" },
+    });
     fireEvent.keyDown(left(), { key: "ArrowLeft" });
     await advance(60);
     fireEvent.click(card());
@@ -230,7 +235,7 @@ describe("Controller integration", () => {
 });
 
 describe("Recessed card reader", () => {
-  it("allows full lens motion on a reduced-motion device without skipping the reading state", async () => {
+  it("defaults to full lens motion on a reduced-motion device without skipping the reading state", async () => {
     vi.mocked(window.matchMedia).mockImplementation(
       () =>
         ({
@@ -242,7 +247,7 @@ describe("Recessed card reader", () => {
     render(<DecadeExperience />);
     expect(
       document.querySelector("main")!.classList.contains("reduced-motion"),
-    ).toBe(true);
+    ).toBe(false);
     fireEvent.click(screen.getByRole("button", { name: /KEYBOARD & TAP/ }));
     const animation = screen.getByRole("combobox", { name: "Animation" });
     fireEvent.change(animation, { target: { value: "full" } });
@@ -288,6 +293,20 @@ describe("Recessed card reader", () => {
       expect(
         screen.getByTestId("lens-card-slide").getAttribute("data-card-id"),
       ).toBe(id);
+      const physicalSurface = screen.getByTestId("lens-card-slide");
+      const printedCard = physicalSurface.querySelector("use")!;
+      expect(
+        screen
+          .getByTestId("seated-card")
+          .querySelector("use")!
+          .getAttribute("href"),
+      ).toBe(printedCard.getAttribute("href"));
+      expect(
+        screen
+          .getByTestId("transient-card")
+          .querySelector("use")!
+          .getAttribute("href"),
+      ).toBe(printedCard.getAttribute("href"));
       await advance(CARD_INSERT_DURATION - 1);
       expect(state()).toBe("inserting");
       expect(screen.queryByTestId("lens-emblem")).toBeNull();
@@ -297,6 +316,10 @@ describe("Recessed card reader", () => {
       await advance(1);
       expect(screen.queryByTestId("lens-card-slide")).toBeNull();
       expect(screen.queryByTestId("transient-card")).toBeNull();
+      expect(screen.getByTestId("lens-emblem")).toBe(physicalSurface);
+      expect(screen.getByTestId("lens-emblem").querySelector("use")).toBe(
+        printedCard,
+      );
       expect(
         screen.getByTestId("reader-card-window").getAttribute("data-card-id"),
       ).toBe(id);
@@ -325,6 +348,9 @@ describe("Recessed card reader", () => {
         key: "ArrowUp",
       });
       identity();
+      expect(screen.getByTestId("lens-emblem").querySelector("use")).toBe(
+        printedCard,
+      );
       await advance(280);
       expect(state()).toBe("open");
       expect(screen.queryByTestId("lens-emblem")).toBeNull();
@@ -354,6 +380,59 @@ describe("Recessed card reader", () => {
     expect(screen.getByTestId("seated-card").getAttribute("data-card-id")).toBe(
       "001",
     );
+  });
+  it("remembers the animation choice across remounts", () => {
+    const view = render(<DecadeExperience />);
+    fireEvent.click(screen.getByRole("button", { name: /KEYBOARD & TAP/ }));
+    fireEvent.change(screen.getByRole("combobox", { name: "Animation" }), {
+      target: { value: "reduced" },
+    });
+    expect(window.localStorage.getItem("krev1-driver-motion-v1")).toBe(
+      "reduced",
+    );
+    view.unmount();
+    render(<DecadeExperience />);
+    expect(
+      document.querySelector("main")!.classList.contains("reduced-motion"),
+    ).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: /KEYBOARD & TAP/ }));
+    fireEvent.change(screen.getByRole("combobox", { name: "Animation" }), {
+      target: { value: "full" },
+    });
+    expect(window.localStorage.getItem("krev1-driver-motion-v1")).toBe("full");
+  });
+  it("ignores an invalid saved choice and handles unavailable storage", async () => {
+    window.localStorage.setItem("krev1-driver-motion-v1", "unknown");
+    const view = render(<DecadeExperience />);
+    expect(
+      document.querySelector("main")!.classList.contains("full-motion"),
+    ).toBe(true);
+    view.unmount();
+    const read = vi
+      .spyOn(Storage.prototype, "getItem")
+      .mockImplementation(() => {
+        throw new Error("Storage blocked");
+      });
+    const write = vi
+      .spyOn(Storage.prototype, "setItem")
+      .mockImplementation(() => {
+        throw new Error("Storage blocked");
+      });
+    try {
+      render(<DecadeExperience />);
+      fireEvent.click(screen.getByRole("button", { name: /KEYBOARD & TAP/ }));
+      fireEvent.change(screen.getByRole("combobox", { name: "Animation" }), {
+        target: { value: "full" },
+      });
+      await load();
+      expect(state()).toBe("loaded");
+      expect(
+        screen.getByTestId("lens-emblem").getAttribute("data-card-id"),
+      ).toBe("001");
+    } finally {
+      read.mockRestore();
+      write.mockRestore();
+    }
   });
 });
 
@@ -412,7 +491,8 @@ describe("Physical card scale", () => {
   );
   it("rescales all cards and cancels a held gesture when the scene resizes, then disconnects on unmount", async () => {
     let resized:
-      ((entries: { contentRect: { width: number } }[]) => void) | undefined;
+      | ((entries: { contentRect: { width: number } }[]) => void)
+      | undefined;
     const observe = vi.fn(),
       disconnect = vi.fn();
     vi.stubGlobal(

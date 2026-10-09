@@ -321,23 +321,11 @@ figure {
 .dx-lens-scanner {
   opacity: 0;
 }
-.dx-lens-display {
-  transform-box: view-box;
-  transform-origin: 500px 257px;
-  transform: rotate(calc(var(--open) * -90deg));
-  transition: transform 0.18s ease-out;
-  animation: lensRecognized 0.16s ease-out both;
-}
-.dx-lens-card-slide {
-  animation: lensCardPass var(--card-insert-duration) linear both;
-}
-.dx-lens-emblem {
-  opacity: 0.9;
-  filter: drop-shadow(0 0 2px currentColor);
-}
-.dx-model-activated .dx-lens-emblem {
+.dx-lens-card {
   opacity: 1;
-  filter: drop-shadow(0 0 3px currentColor);
+}
+.dx-lens-lit {
+  mix-blend-mode: screen;
 }
 .dx-card-motion {
   transform: translateX(
@@ -361,7 +349,6 @@ figure {
   transition: none;
 }
 .is-tracking .dx-face-rotor,
-.is-tracking .dx-lens-display,
 .is-tracking .dx-mechanical-left,
 .is-tracking .dx-mechanical-right {
   transition: none;
@@ -889,26 +876,6 @@ figure {
     transform: translateX(0);
   }
 }
-@keyframes lensCardPass {
-  0% {
-    opacity: 0;
-  }
-  12%,
-  74% {
-    opacity: 0.88;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-@keyframes lensRecognized {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
 @keyframes cardEject {
   from {
     transform: translateX(
@@ -917,7 +884,6 @@ figure {
   }
   to {
     transform: translateX(calc((var(--card-entry-travel) + 12px) * -1));
-    opacity: 0;
   }
 }
 @keyframes stageReveal {

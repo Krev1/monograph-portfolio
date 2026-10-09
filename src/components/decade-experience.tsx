@@ -58,14 +58,22 @@ const tones: Record<Sound, number[]> = {
   ability: [520, 780],
   eject: [440, 260],
 };
-function CardFace({ project }: { project: PortfolioProject }) {
+type MotionMode = "auto" | "full" | "reduced";
+const MOTION_STORAGE_KEY = "krev1-driver-motion-v1";
+function CardFace({
+  project,
+  readerSide = false,
+}: {
+  project: PortfolioProject;
+  readerSide?: boolean;
+}) {
   return (
     <svg
       className="card-artwork"
       viewBox={`0 0 ${DRIVER_DIMENSIONS.artworkWidth} ${DRIVER_DIMENSIONS.artworkHeight}`}
       aria-hidden="true"
     >
-      <CardArtwork project={project} />
+      <CardArtwork project={project} readerSide={readerSide} />
     </svg>
   );
 }
@@ -91,9 +99,24 @@ export default function DecadeExperience() {
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [notice, setNotice] = useState("");
   const deviceReduced = useReducedMotion();
-  const [motionMode, setMotionMode] = useState<"auto" | "full" | "reduced">(
-    "auto",
-  );
+  const [motionMode, setMotionMode] = useState<MotionMode>("full");
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(MOTION_STORAGE_KEY);
+      if (saved === "auto" || saved === "full" || saved === "reduced")
+        setMotionMode(saved);
+    } catch {
+      // Blocked storage keeps the requested visible motion available.
+    }
+  }, []);
+  function chooseMotion(mode: MotionMode) {
+    setMotionMode(mode);
+    try {
+      window.localStorage.setItem(MOTION_STORAGE_KEY, mode);
+    } catch {
+      // The choice still works for this visit when storage is unavailable.
+    }
+  }
   const reduced =
     motionMode === "reduced" || (motionMode === "auto" && deviceReduced);
   const lease = useRef<Lease | null>(null);
@@ -842,9 +865,10 @@ export default function DecadeExperience() {
           aria-hidden="true"
         >
           <CardFace
-            project={driverProjects.find(
-              (project) => project.id === ghost.cardId,
-            )!}
+            readerSide={ghost.aligned}
+            project={
+              driverProjects.find((project) => project.id === ghost.cardId)!
+            }
           />
         </div>
       )}
@@ -875,7 +899,7 @@ export default function DecadeExperience() {
                 onChange={(event) => {
                   const mode = event.currentTarget.value;
                   if (mode === "auto" || mode === "full" || mode === "reduced")
-                    setMotionMode(mode);
+                    chooseMotion(mode);
                 }}
               >
                 <option value="auto">Device setting</option>

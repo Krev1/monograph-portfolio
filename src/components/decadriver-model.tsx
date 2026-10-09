@@ -2,7 +2,6 @@
 
 import { memo, useId } from "react";
 import type { PortfolioProject } from "@/data/driver-projects";
-import { CardEmblemPaths } from "./card-emblem";
 import { CardArtwork } from "./card-artwork";
 import { DRIVER_DIMENSIONS } from "@/lib/driver-dimensions";
 
@@ -166,9 +165,10 @@ function DecadriverModel({
           {card && (
             <g
               id={ref("readerCard")}
+              data-testid="reader-card-definition"
               transform={`translate(${DRIVER_DIMENSIONS.cardSeatX} ${257 + DRIVER_DIMENSIONS.cardWidth / 2}) rotate(-90) scale(${DRIVER_DIMENSIONS.cardWidth / DRIVER_DIMENSIONS.artworkWidth})`}
             >
-              <CardArtwork project={card} />
+              <CardArtwork project={card} readerSide />
             </g>
           )}
           <g id={ref("screw")}>
@@ -359,6 +359,40 @@ function DecadriverModel({
               transform="translate(1000 0) scale(-1 1)"
             />
             <use href={`#${ref("pods")}`} x="737" y="263" />
+          </g>
+          {/* The fixed rear nameplate is occluded by the opening reader. */}
+          <g className="dx-carrier-brand" data-testid="carrier-brand">
+            <path
+              d="M348 51H651L667 78H333Z"
+              fill="#090f15"
+              transform="translate(0 2)"
+            />
+            <path
+              d="M348 51H651L667 78H333Z"
+              fill={paint("shell")}
+              stroke="#777f83"
+              strokeWidth="1.5"
+            />
+            <path
+              d="M351 53H649"
+              stroke="#d6d9d5"
+              strokeWidth="1.1"
+              opacity=".75"
+            />
+            <text
+              x="501"
+              y="71"
+              textAnchor="middle"
+              fontSize="13"
+              letterSpacing="11"
+              fontFamily="Arial,sans-serif"
+              fontWeight="600"
+              fill="#c4cccc"
+              stroke="#111920"
+              strokeWidth=".55"
+            >
+              KREV1
+            </text>
           </g>
           <g className="dx-face-rotor dx-reader-unit" data-part="reader">
             {card && cardPhase !== "seated" && (
@@ -556,12 +590,15 @@ function DecadriverModel({
               strokeWidth="2"
             />
             <circle cx="500" cy="257" r="85" fill={paint("lens")} />
-            {card && cardPhase === "inserting" && (
+            {card && (
               <g
-                className="dx-lens-card-slide dx-card-inserting"
+                className={"dx-lens-card dx-card-" + cardPhase}
                 clipPath={paint("lensClip")}
-                data-testid="lens-card-slide"
+                data-testid={
+                  cardPhase === "inserting" ? "lens-card-slide" : "lens-emblem"
+                }
                 data-card-id={card.id}
+                data-emblem={card.mainCard.emblem}
               >
                 <use
                   className="dx-card-motion"
@@ -585,24 +622,6 @@ function DecadriverModel({
               r="83"
               fill={paint("activated")}
             />
-            {card && cardPhase !== "inserting" && (
-              <g clipPath={paint("lensClip")}>
-                <g
-                  className="dx-lens-display"
-                  data-testid="lens-emblem"
-                  data-card-id={card.id}
-                  data-emblem={card.mainCard.emblem}
-                  color={card.mainCard.accent}
-                >
-                  <g
-                    className="dx-lens-emblem"
-                    transform="translate(444 201) scale(.7)"
-                  >
-                    <CardEmblemPaths emblem={card.mainCard.emblem} />
-                  </g>
-                </g>
-              </g>
-            )}
             <g clipPath={paint("lensClip")}>
               <path
                 d="M434 197Q489 158 558 207L463 292L419 259Z"
@@ -754,40 +773,6 @@ function DecadriverModel({
             <use href={`#${ref("screw")}`} x="671" y="116" />
             <use href={`#${ref("screw")}`} x="330" y="400" />
             <use href={`#${ref("screw")}`} x="670" y="400" />
-          </g>
-          {/* Fixed foreground lip of the carrier; the reader moves underneath. */}
-          <g className="dx-carrier-brand" data-testid="carrier-brand">
-            <path
-              d="M348 66H651L667 94H333Z"
-              fill="#090f15"
-              transform="translate(0 2)"
-            />
-            <path
-              d="M348 66H651L667 94H333Z"
-              fill={paint("shell")}
-              stroke="#777f83"
-              strokeWidth="1.5"
-            />
-            <path
-              d="M351 68H649"
-              stroke="#d6d9d5"
-              strokeWidth="1.1"
-              opacity=".75"
-            />
-            <text
-              x="501"
-              y="86"
-              textAnchor="middle"
-              fontSize="13"
-              letterSpacing="11"
-              fontFamily="Arial,sans-serif"
-              fontWeight="600"
-              fill="#c4cccc"
-              stroke="#111920"
-              strokeWidth=".55"
-            >
-              KREV1
-            </text>
           </g>
         </g>
       </svg>

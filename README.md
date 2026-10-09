@@ -28,7 +28,7 @@ For development, use `npm run dev`. The production site is connected to the exis
 | Eject             | Pull the exposed card upward while open                      | Arrow Up / Enter on loaded card                 |
 | Cancel            | Release short of the lock; cancelled capture restores origin | Escape during a drag                            |
 
-Optional **Keyboard & tap controls** exposes equivalent operations one step at a time. Reduced motion shortens effects and preserves every logical step. Sound defaults off.
+Optional **Keyboard & tap controls** exposes equivalent operations one step at a time. Animation defaults to Full motion and remembers your choice; Device setting follows the device preference and Reduced motion shortens effects while preserving every logical step. Sound defaults off.
 
 ## Specification and evidence
 
@@ -38,6 +38,7 @@ Optional **Keyboard & tap controls** exposes equivalent operations one step at a
 - [Programming-language marks on the ivory face](docs/LANGUAGE-MARKS.md)
 - [Physical card proportions and two-part Driver](docs/CARD-DRIVER-PROPORTIONS.md)
 - [Fixed carrier branding and card passage under the lens](docs/CARRIER-BRANDING-LENS-ENTRY.md)
+- [Continuous card mechanics, rotating lens print and rear carrier branding](docs/CONTINUOUS-CARD-MECHANICS.md)
 - [Verification and delivery record](docs/VERIFICATION.md)
 - `src/lib/driver-machine.ts`: pure guarded transitions and run tokens
 - `src/lib/driver-geometry.ts`: scale-aware gestures and slot attraction

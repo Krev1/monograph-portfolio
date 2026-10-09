@@ -1,5 +1,7 @@
 # Seated card and circular reader specification
 
+Revision history: the independently recognized, counter-rotated lens emblem below is superseded by [Continuous card mechanics](CONTINUOUS-CARD-MECHANICS.md). The current card print rotates and retracts with its physical card.
+
 Date: 2026-10-09. Baseline: `1593ec0ebf936b5d0697ebeacb73a4f29011f438`.
 Recorded before implementation for the user's two annotated screenshots.
 

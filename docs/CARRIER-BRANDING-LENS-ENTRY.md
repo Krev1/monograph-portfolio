@@ -1,5 +1,7 @@
 # Carrier branding and card entry through the lens
 
+Revision history: the foreground nameplate, fading lens passage and default automatic motion below are superseded by [Continuous card mechanics](CONTINUOUS-CARD-MECHANICS.md), following the user's later correction.
+
 Date: 2026-10-09. Baseline: `2404bf936b45fcb9ffe90fc9a78ac8c75d09c36f`.
 Recorded before initial implementation for the user's correction that KREV1 belongs to the handle carrier and request for visible card sliding inside the circular lens. The motion-choice supplement was added during QA after observing the browser's reduced-motion preference.
 
