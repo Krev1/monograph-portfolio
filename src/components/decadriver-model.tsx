@@ -569,31 +569,34 @@ function DecadriverModel({
               strokeWidth="2"
             />
             <circle cx="500" cy="257" r="85" fill={paint("lens")} />
-            {card && (
-              <g
-                className={"dx-lens-card dx-card-" + cardPhase}
-                clipPath={paint("lensClip")}
-                data-testid={
-                  cardPhase === "inserting" ? "lens-card-slide" : "lens-emblem"
-                }
-                data-card-id={card.id}
-                data-emblem={card.mainCard.emblem}
-              >
-                <use
-                  className="dx-card-motion"
-                  href={`#${ref("readerCard")}`}
-                />
-                <circle
-                  cx="500"
-                  cy="257"
-                  r="81"
-                  fill="none"
-                  stroke="#02070b"
-                  strokeWidth="8"
-                  opacity=".55"
-                />
-              </g>
-            )}
+            <g clipPath={paint("lensClip")} data-testid="lens-aperture">
+              {card && (
+                <g
+                  className={"dx-lens-card dx-card-" + cardPhase}
+                  data-testid={
+                    cardPhase === "inserting"
+                      ? "lens-card-slide"
+                      : "lens-emblem"
+                  }
+                  data-card-id={card.id}
+                  data-emblem={card.mainCard.emblem}
+                >
+                  <use
+                    className="dx-card-motion"
+                    href={`#${ref("readerCard")}`}
+                  />
+                  <circle
+                    cx="500"
+                    cy="257"
+                    r="81"
+                    fill="none"
+                    stroke="#02070b"
+                    strokeWidth="8"
+                    opacity=".55"
+                  />
+                </g>
+              )}
+            </g>
             <circle
               className="dx-lens-lit"
               cx="500"

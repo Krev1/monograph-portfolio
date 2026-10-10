@@ -393,6 +393,39 @@ describe("Controller integration", () => {
 });
 
 describe("Recessed card reader", () => {
+  it("keeps a permanent circular aperture around card prints throughout all project cycles", async () => {
+    render(<DecadeExperience />);
+    const aperture = screen.getByTestId("lens-aperture");
+    const clip = aperture.getAttribute("clip-path")!;
+    const id = clip.slice(5, -1);
+    const circle = document.getElementById(id)!.querySelector("circle")!;
+    expect(circle.getAttribute("r")).toBe("85");
+    expect(circle.getAttribute("cx")).toBe("500");
+    for (const name of ["SPENDWISE AI", "LEARN", "KREV1 PORTFOLIO"]) {
+      if (state() === "idle") await open();
+      fireEvent.click(card(name));
+      expect(screen.getByTestId("lens-card-slide").parentElement).toBe(
+        aperture,
+      );
+      await advance(CARD_INSERT_DURATION);
+      const surface = screen.getByTestId("lens-emblem");
+      expect(surface.parentElement).toBe(aperture);
+      expect(surface.getAttribute("clip-path")).toBeNull();
+      fireEvent.keyDown(left(), { key: "ArrowRight" });
+      await advance(180);
+      await advance(HENSHIN_DURATION);
+      expect(screen.getByTestId("lens-aperture")).toBe(aperture);
+      expect(aperture.getAttribute("clip-path")).toBe(clip);
+      expect(document.getElementById(id)).toBeTruthy();
+      fireEvent.keyDown(left(), { key: "ArrowLeft" });
+      await advance(180);
+      fireEvent.keyDown(screen.getByRole("button", { name: /Eject loaded/ }), {
+        key: "ArrowUp",
+      });
+      await advance(280);
+      expect(screen.getByTestId("lens-aperture")).toBe(aperture);
+    }
+  });
   it("defaults to full lens motion on a reduced-motion device without skipping the reading state", async () => {
     vi.mocked(window.matchMedia).mockImplementation(
       () =>
