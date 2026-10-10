@@ -197,6 +197,18 @@ describe("Original reader audio", () => {
         );
     }
   });
+  it("lets every shipped announcement finish inside its scheduled voice window", () => {
+    for (const sound of ["insert", "henshin", "ability"] as const) {
+      for (const card of ["001", "002", "003"] as const) {
+        for (const cue of driverSoundScore(sound, card, true)) {
+          if (cue.kind !== "voice") continue;
+          const file = readFileSync(new URL("../public" + DRIVER_VOICES[cue.voice], import.meta.url));
+          const seconds = file.readUInt32LE(40) / (file.readUInt32LE(24) * file.readUInt16LE(22) * 2);
+          expect(seconds).toBeLessThanOrEqual(cue.duration);
+        }
+      }
+    }
+  });
   it("uses bounded stereo Foley assets while retaining synthesized fallback and card speech", () => {
     for (const sound of [
       "open",

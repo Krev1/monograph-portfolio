@@ -25,21 +25,21 @@ export type SoundCue = CueBase &
     | { kind: "sample"; sample: SampleId }
   );
 export const DRIVER_VOICES: Record<VoiceId, string> = {
-  ride: "/audio/v12/ride.wav",
-  attack: "/audio/v12/attack.wav",
-  "001": "/audio/v12/001.wav",
-  "002": "/audio/v12/002.wav",
-  "003": "/audio/v12/003.wav",
+  ride: "/audio/v13/ride.wav",
+  attack: "/audio/v13/attack.wav",
+  "001": "/audio/v13/001.wav",
+  "002": "/audio/v13/002.wav",
+  "003": "/audio/v13/003.wav",
 };
 export const DRIVER_SAMPLES: Record<SampleId, string> = {
-  open: "/audio/v12/open.wav",
-  close: "/audio/v12/close.wav",
-  insert: "/audio/v12/insert.wav",
-  henshin: "/audio/v12/henshin.wav",
-  ability: "/audio/v12/ability.wav",
-  eject: "/audio/v12/eject.wav",
-  standby: "/audio/v12/standby.wav",
-  move: "/audio/v12/move.wav",
+  open: "/audio/v13/open.wav",
+  close: "/audio/v13/close.wav",
+  insert: "/audio/v13/insert.wav",
+  henshin: "/audio/v13/henshin.wav",
+  ability: "/audio/v13/ability.wav",
+  eject: "/audio/v13/eject.wav",
+  standby: "/audio/v13/standby.wav",
+  move: "/audio/v13/move.wav",
 };
 export const DRIVER_ASSETS = { ...DRIVER_VOICES, ...DRIVER_SAMPLES };
 
@@ -67,7 +67,7 @@ export function driverSoundScore(
                 kind: "voice",
                 voice: "attack",
                 at: 0.035,
-                duration: 0.8,
+                duration: 0.84,
                 gain: 0.62,
               },
             ]

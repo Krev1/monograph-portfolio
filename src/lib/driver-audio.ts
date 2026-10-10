@@ -315,7 +315,7 @@ export class DriverAudio {
       this.standby = null;
       return;
     }
-    if (!this.standby) this.standby = this.loop("standby", 0.09);
+    if (!this.standby) this.standby = this.loop("standby", 0.18);
   }
   setMechanism(on: boolean, progress: number) {
     if (!on || !this.enabled || this.disposed) {
