@@ -28,18 +28,18 @@ Both a desktop pointer cycle and a 320px pointer insertion / keyboard closure cy
 
 | Viewport   | Horizontal overflow                      | Minimum tested handle size                         | Deck bottom → rotor top     |
 | ---------- | ---------------------------------------- | -------------------------------------------------- | --------------------------- |
-| 320 × 760  | None                                     | 60.8 × 54 px                                       | Visually separated          |
-| 390 × 844  | None                                     | 74.1 × 65.8 px                                     | 397.4 → 497.5 px            |
-| 768 × 1024 | None                                     | 132.7 × 116.1 px                                   | 435.0 → 593.8 px            |
-| 1280 × 720 | None                                     | 152.9 × 133.8 px                                   | 332.0 → 345.7 px            |
-| 320 × 568  | None; vertical scrolling on short screen | 60.8 × 54 px                                       | 337.2 → 363.8 px            |
-| 1440 × 900 | None                                     | Native pointer opening/insertion/closure exercised | Visual separation confirmed |
+| 320 �— 760  | None                                     | 60.8 �— 54 px                                       | Visually separated          |
+| 390 �— 844  | None                                     | 74.1 �— 65.8 px                                     | 397.4 → 497.5 px            |
+| 768 �— 1024 | None                                     | 132.7 �— 116.1 px                                   | 435.0 → 593.8 px            |
+| 1280 �— 720 | None                                     | 152.9 �— 133.8 px                                   | 332.0 → 345.7 px            |
+| 320 �— 568  | None; vertical scrolling on short screen | 60.8 �— 54 px                                       | 337.2 → 363.8 px            |
+| 1440 �— 900 | None                                     | Native pointer opening/insertion/closure exercised | Visual separation confirmed |
 
 The initial card/Driver overlap found during QA was corrected by removing redundant lower instructions and adapting deck height to short viewports. The right grip's three material indicators were corrected to their own hardware position. Screen captures accompany the delivered review artifacts.
 
 ## Traceability
 
-Final layout refinement: the active stage scrolls in a bounded region above the dock, rather than behind a fixed Driver. Desktop 1440 × 900 measured stage bottom 667.5 px / Driver top 704.1 px. Mobile 320 × 568 measured stage bottom 402.2 px / Driver top 463.5 px, with document height exactly 568 px and no horizontal overflow. Ability selection brings its panel into this independent scroll region. This layout refinement was locally built and visually checked; its remote checks run on the subsequent review commit.
+Final layout refinement: the active stage scrolls in a bounded region above the dock, rather than behind a fixed Driver. Desktop 1440 �— 900 measured stage bottom 667.5 px / Driver top 704.1 px. Mobile 320 �— 568 measured stage bottom 402.2 px / Driver top 463.5 px, with document height exactly 568 px and no horizontal overflow. Ability selection brings its panel into this independent scroll region. This layout refinement was locally built and visually checked; its remote checks run on the subsequent review commit.
 
 R01/R06/R09/R12: reducer and controller tests. R03/R04/R05: geometry/controller tests and native browser gestures. R07/R11: milestone and reduced-motion tests. R02/R13: viewport geometry plus visual inspection. R08: project source inspection and evidenced ability interaction. R10: keyboard/tap tests, live status, focus handoff and measured target sizes. R14: local gates above; remote delivery is recorded below.
 
@@ -74,19 +74,19 @@ Specified before editing in `docs/VISUAL-FIDELITY.md`, against review commit `02
 
 Local gates: all **27 tests** pass after the geometry change; TypeScript passes. The production build reports **117 kB** first-load JavaScript (14.3 kB route) with no additional rendering dependency. The React review confirms a memoized hardware component, instance-unique SVG IDs, unchanged pointer ownership and deadline cleanup, native controls, focus handoffs and reduced-motion equivalents.
 
-Native browser gestures on 390 × 844 completed open → vertical insertion of card 003 → inward closure → active portfolio. A pointer reopen at 320 × 568 removed the stage and preserved card 003. Ability selection automatically brings the panel into the bounded stage. The updated mobile stage shows its description and result above the larger dock. Short initial screens use vertical scrolling and reserve space below the deck for the Driver.
+Native browser gestures on 390 �— 844 completed open → vertical insertion of card 003 → inward closure → active portfolio. A pointer reopen at 320 �— 568 removed the stage and preserved card 003. Ability selection automatically brings the panel into the bounded stage. The updated mobile stage shows its description and result above the larger dock. Short initial screens use vertical scrolling and reserve space below the deck for the Driver.
 
 | Viewport   | Deck bottom → hardware top | Handle dimensions / result                             |
 | ---------- | -------------------------- | ------------------------------------------------------ |
-| 320 × 568  | 337.2 → 367.2 px           | No horizontal overflow; initial document height 650 px |
-| 390 × 640  | 369.4 → 399.4 px           | No horizontal overflow; initial document height 710 px |
-| 320 × 760  | 365.2 → 452.3 px           | 64.0 × 71.1 px                                         |
-| 390 × 844  | 397.4 → 486.3 px           | 78.0 × 86.6 px                                         |
-| 768 × 1024 | 435.0 → 549.7 px           | 147.5 × 163.8 px                                       |
-| 1280 × 720 | 332.0 → 343.6 px           | 144.0 × 159.9 px                                       |
-| 1440 × 900 | 435.0 → 448.0 px           | 172.0 × 191.0 px                                       |
+| 320 �— 568  | 337.2 → 367.2 px           | No horizontal overflow; initial document height 650 px |
+| 390 �— 640  | 369.4 → 399.4 px           | No horizontal overflow; initial document height 710 px |
+| 320 �— 760  | 365.2 → 452.3 px           | 64.0 �— 71.1 px                                         |
+| 390 �— 844  | 397.4 → 486.3 px           | 78.0 �— 86.6 px                                         |
+| 768 �— 1024 | 435.0 → 549.7 px           | 147.5 �— 163.8 px                                       |
+| 1280 �— 720 | 332.0 → 343.6 px           | 144.0 �— 159.9 px                                       |
+| 1440 �— 900 | 435.0 → 448.0 px           | 172.0 �— 191.0 px                                       |
 
-Active 320 × 568: document height remains 568 px; handles are 60.2 × 66.8 px, and the hardware starts at 428.8 px. The stage has been extended safely toward the dock after this measurement. Final production-build screenshots and exact-head CI/preview checks are supplied with the updated delivery report.
+Active 320 �— 568: document height remains 568 px; handles are 60.2 �— 66.8 px, and the hardware starts at 428.8 px. The stage has been extended safely toward the dock after this measurement. Final production-build screenshots and exact-head CI/preview checks are supplied with the updated delivery report.
 
 F01–F04/F07: photographed closed/open/loaded hardware and directed cycle. F05: existing controller/reducer suite plus native gestures. F06: viewport table, bounded stage and ability selection. F08: production build, type check and source review. The video remains unavailable; exact film mechanics/timing and physical-device tests are not claimed.
 
@@ -94,19 +94,19 @@ F01–F04/F07: photographed closed/open/loaded hardware and directed cycle. F05:
 
 Specified before editing in `docs/CARD-READER-FIDELITY.md`, against `1593ec0ebf936b5d0697ebeacb73a4f29011f438`. This section supersedes the earlier protruding-card implementation. The newly supplied YouTube video `1io0g-4Sz3A` was played and inspected around 3:01 and 3:37–3:47; the seated card is enclosed with a small visible section in the upper groove, and its symbol appears on the circular lens. Earlier unavailable-video statements refer to the original `mA9z6rS1uMc` reference, not this new video.
 
-The full original card is drawn behind the casing. Its only seated view is a 65×53 SVG aperture in the left horizontal groove; it rotates to the top when open. A recessed rim, inner shadow and retaining lip hide the card edges. External card artwork exists only during insertion or extraction. The shared ledger, brackets and monogram paths supply both the deck cards and the lens. Reading completes before the lens identifies the card, while project disclosure remains gated by Henshin. The lens symbol counter-rotates with the face and remains upright. Extraction keeps the identity until successful completion; cancellation returns the same card to its enclosed position.
+The full original card is drawn behind the casing. Its only seated view is a 65�—53 SVG aperture in the left horizontal groove; it rotates to the top when open. A recessed rim, inner shadow and retaining lip hide the card edges. External card artwork exists only during insertion or extraction. The shared ledger, brackets and monogram paths supply both the deck cards and the lens. Reading completes before the lens identifies the card, while project disclosure remains gated by Henshin. The lens symbol counter-rotates with the face and remains upright. Extraction keeps the identity until successful completion; cancellation returns the same card to its enclosed position.
 
 **Local gates:** 31/31 tests pass, including all three card identities before Henshin, through closure/activation/reopening, and clearing after extraction. Cancelled extraction restores the recessed card and its symbol. TypeScript passes. Production build succeeds: 15 kB route / 118 kB first-load JavaScript. No rendering dependency was added. React review: reusable typed symbol paths, memoized hardware, unique SVG definition IDs, retained pointer ownership/deadline cleanup, native keyboard/tap controls and reduced-motion rules.
 
-**Native browser evidence:** The production build completed a desktop pointer opening → downward SpendWise insertion → inward closure → active project. The loaded state had no external transient card; its ledger symbol was visible before Henshin. Reopening retained it, and pulling upward from the groove cleared both displays. Learn changed the lens to brackets. At 390×844, native upward extraction and downward insertion of KREV1 succeeded, and the monogram appeared in the lens. Keyboard closure at 320×568 retained that monogram after Henshin. No console warnings/errors were returned during the tested flow.
+**Native browser evidence:** The production build completed a desktop pointer opening → downward SpendWise insertion → inward closure → active project. The loaded state had no external transient card; its ledger symbol was visible before Henshin. Reopening retained it, and pulling upward from the groove cleared both displays. Learn changed the lens to brackets. At 390�—844, native upward extraction and downward insertion of KREV1 succeeded, and the monogram appeared in the lens. Keyboard closure at 320�—568 retained that monogram after Henshin. No console warnings/errors were returned during the tested flow.
 
 | Viewport | Open groove target | Result |
 | --- | --- | --- |
-| 1440×900 | 120.4×87.5 CSS px | Fully enclosed loaded card; native complete cycle; no horizontal overflow |
-| 390×844 | 70.2×44 CSS px | Native extraction and insertion; correct monogram; no horizontal overflow |
-| 320×568 | 54.9×44 CSS px | Enclosed card; short-screen scrolling; no horizontal overflow |
+| 1440�—900 | 120.4�—87.5 CSS px | Fully enclosed loaded card; native complete cycle; no horizontal overflow |
+| 390�—844 | 70.2�—44 CSS px | Native extraction and insertion; correct monogram; no horizontal overflow |
+| 320�—568 | 54.9�—44 CSS px | Enclosed card; short-screen scrolling; no horizontal overflow |
 
-Active 320×568: stage bottom 400.8 px, hardware top 428.8 px; the card strip stays inside the left groove and the symbol remains centered. The disabled ejection target is scaled with the active dock; reopening restores its measured open size before extraction is enabled.
+Active 320�—568: stage bottom 400.8 px, hardware top 428.8 px; the card strip stays inside the left groove and the symbol remains centered. The disabled ejection target is scaled with the active dock; reopening restores its measured open size before extraction is enabled.
 
 C01/C03: open and closed production screenshots plus clipped SVG aperture. C02/C04: three-card controller tests and native switching/extraction. C05/C06: native gestures, regression tests and target measurements above. C07: local gates; exact revision remote checks are recorded in the delivered report. Physical touchscreen devices and other browser engines remain outside the observed test coverage.
 
@@ -114,7 +114,7 @@ C01/C03: open and closed production screenshots plus clipped SVG aperture. C02/C
 
 Specified before editing in `docs/LANGUAGE-MARKS.md`, against `447117d990ef22485eaf897501ccdc12cf3ae9c4`. All nine old face glyphs are replaced with original typographic marks: PY, JS, TS, C++, C#, JAVA, GO, RS and KT. Compact outline, square, hexagonal and gear badges use dark graphite and ivory. Labels occupy the same nine face regions; small outward adjustments reserve room around the silver annulus. This decorative motif does not add proficiency claims or change evidenced project abilities.
 
-L01/L02: final desktop closed screenshot shows all nine language labels. Conservative distance from each label's screen bounding box to the outer annulus is positive: 4.0–16.5 CSS px at 1440×900. C# was moved outward during QA and now clears it by 7.6 px. The 320×568 closed view has all nine marks and no horizontal overflow; these small hardware inscriptions are decorative rather than primary reading content.
+L01/L02: final desktop closed screenshot shows all nine language labels. Conservative distance from each label's screen bounding box to the outer annulus is positive: 4.0–16.5 CSS px at 1440�—900. C# was moved outward during QA and now clears it by 7.6 px. The 320�—568 closed view has all nine marks and no horizontal overflow; these small hardware inscriptions are decorative rather than primary reading content.
 
 L03: the open reader rotates all marks clockwise with the ivory shell. Inserting KREV1 still produces the centered upright monogram, with card 003 enclosed and no external transient card in the loaded state. Open and closed screenshots were saved from the final local production build; no browser console warnings/errors were observed.
 
@@ -124,25 +124,25 @@ L04: strict TypeScript and production build pass; route JavaScript is 14.8 kB / 
 
 Specified before editing in `docs/CARD-DRIVER-PROPORTIONS.md`, against `6b18cb3fdbe3cb14a37bb531d79b7b797d3aa7a4`. The user directed the video study to 1:15–1:50. At approximately 1:17 the grip carrier is shown without the front reader; at approximately 1:42 detached ivory reading units are shown separately. Bandai's ver.2 specification supplies the 59:86 card aspect ratio and approximate 59/202 card-to-body width calibration, with the version distinction recorded in the specification.
 
-The deck, pointer ghost and reader now share `CardArtwork` and a typed 236×344 physical plane. The same scene scale determines all card dimensions. Pickup preserves the actual pointer anchor; alignment holds the card at the reader entrance before insertion. Extraction converts screen movement to the reader coordinate system. Resize cancels a held gesture before updating the physical scale; the observer disconnects on unmount. The rear carrier and front reader are separate drawing groups. Wider graphite carrier shoulders expose the mounting layer when the ivory reader rotates. The accepted recessed aperture, central project symbol and nine language marks are retained.
+The deck, pointer ghost and reader now share `CardArtwork` and a typed 236�—344 physical plane. The same scene scale determines all card dimensions. Pickup preserves the actual pointer anchor; alignment holds the card at the reader entrance before insertion. Extraction converts screen movement to the reader coordinate system. Resize cancels a held gesture before updating the physical scale; the observer disconnects on unmount. The rear carrier and front reader are separate drawing groups. Wider graphite carrier shoulders expose the mounting layer when the ivory reader rotates. The accepted recessed aperture, central project symbol and nine language marks are retained.
 
 **Local gates:** all 35 regression tests pass, including original card position at pickup, two screen scales for exact extraction travel, resize cancellation, shared artwork and observer cleanup. Strict TypeScript and production build pass: 15.7 kB route / 118 kB first-load JavaScript. No rendering dependency or external asset was added. React review confirms stable instance IDs, memoized hardware, cleaned-up observer/listeners, retained pointer ownership/run-token guards and native keyboard/tap controls.
 
-**Final production browser flow:** native desktop handle opening, downward SpendWise insertion, inward closure, Henshin, keyboard reopening and native upward extraction completed successfully. Reading showed ledger in the lens and no external card once loaded; completed extraction cleared both card and lens. At 390×844 native insertion of card 003 produced the monogram. At 320×568 keyboard closure preserved it; the active stage ends at 400.8 px and the hardware starts at 428.8 px, with document height 568 px. No console warnings/errors were observed.
+**Final production browser flow:** native desktop handle opening, downward SpendWise insertion, inward closure, Henshin, keyboard reopening and native upward extraction completed successfully. Reading showed ledger in the lens and no external card once loaded; completed extraction cleared both card and lens. At 390�—844 native insertion of card 003 produced the monogram. At 320�—568 keyboard closure preserved it; the active stage ends at 400.8 px and the hardware starts at 428.8 px, with document height 568 px. No console warnings/errors were observed.
 
-| Viewport | Card W×H (CSS px) | Deck bottom → carrier caption top | Horizontal overflow |
+| Viewport | Card W�—H (CSS px) | Deck bottom → carrier caption top | Horizontal overflow |
 | --- | --- | --- | --- |
-| 1440×900 | 171.2×249.5 | 484.5 → 505.4 | None |
-| 1280×720 | 120.0×174.9 | 366.9 → 430.6 | None |
-| 768×1024 | 180.8×263.5 | 498.5 → 532.7 | None |
-| 390×844 | 97.9×142.7 | 360.7 → 464.3 | None |
-| 320×760 | 80.3×117.1 | 335.1 → 430.3 | None |
-| 390×640 | 97.9×142.7 | 332.7 → 340.7 | None |
-| 320×568 | 80.3×117.1 | 307.1 → 315.1 | None |
+| 1440�—900 | 171.2�—249.5 | 484.5 → 505.4 | None |
+| 1280�—720 | 120.0�—174.9 | 366.9 → 430.6 | None |
+| 768�—1024 | 180.8�—263.5 | 498.5 → 532.7 | None |
+| 390�—844 | 97.9�—142.7 | 360.7 → 464.3 | None |
+| 320�—760 | 80.3�—117.1 | 335.1 → 430.3 | None |
+| 390�—640 | 97.9�—142.7 | 332.7 → 340.7 | None |
+| 320�—568 | 80.3�—117.1 | 307.1 → 315.1 | None |
 
-At these sizes, measured card width differs from `actual scene width × 236/940` by less than 0.02 CSS px; aspect ratio rounds to 0.6860. The open aperture hit target remains 57.6×44 px at 320×568 and 70.2×44 px at 390×844.
+At these sizes, measured card width differs from `actual scene width �— 236/940` by less than 0.02 CSS px; aspect ratio rounds to 0.6860. The open aperture hit target remains 57.6�—44 px at 320�—568 and 70.2�—44 px at 390�—844.
 
-Landscape 844×390 keeps a 360px scene and 90.4×131.7px cards rather than shrinking them below usable size. The initial page scrolls vertically (590px document); opening brings both cards and Driver into view. A complete keyboard cycle was exercised. In the final active layout, stage bottom is 263.4 px, hardware top 273.4 px, handle targets 50.4×56.0 px and document height 390 px. The project stage scrolls independently above the larger landscape dock.
+Landscape 844�—390 keeps a 360px scene and 90.4�—131.7px cards rather than shrinking them below usable size. The initial page scrolls vertically (590px document); opening brings both cards and Driver into view. A complete keyboard cycle was exercised. In the final active layout, stage bottom is 263.4 px, hardware top 273.4 px, handle targets 50.4�—56.0 px and document height 390 px. The project stage scrolls independently above the larger landscape dock.
 
 P01/P02: measured common scale, reused SVG artwork, pickup/extraction/resize tests and native pointer cycle. P03: fixed carrier transform `none`, reader quarter-turn matrix and open screenshot. P04: full regression suite and actual read/reopen/extract flow. P05: responsive table, short-screen scrolling and bounded stage. P06: local gates; remote results are recorded in the delivered report. Measurements are frontend calibration, not exact physical toy dimensions or certification on real touchscreen hardware.
 
@@ -156,9 +156,9 @@ QA found `prefers-reduced-motion: reduce` is true in the current browser. Defaul
 
 **Local gates:** 36/36 tests and strict TypeScript pass. The three card lifecycle cases verify the matching lens passage throughout the 620ms reading deadline, no early closure/project reveal, passage cleanup and subsequent emblem identity. An additional test verifies Full motion on a reduced-motion device and switching back. Existing resize, pickup, extraction, cancellation, multi-pointer and deadline-cleanup coverage passes. Production build succeeds: 16 kB route / 119 kB first-load JavaScript, with no additional runtime dependency or external asset.
 
-**Native production browser evidence:** At 1440×900 the carrier brand's box is identical before and after opening: x=598.85, y=549.30, width=242.29, height=21.76 CSS px. Its closest physical assembly is `carrier`. In Full motion, the inserted SpendWise card was captured sliding inside the lens; its motion progressed from approximately -370.7 to -5 SVG units with visible opacity up to 0.88. At loaded, the passage and external card are absent and the ledger symbol is present. A complete close/Henshin/reopen/eject cycle succeeded and cleared the lens afterward. A background native cycle verified Learn passage/card 002 followed by brackets; Reduced motion insertion of KREV1 produced the monogram and cleared the passage. No console warnings/errors were returned in the tested background flow.
+**Native production browser evidence:** At 1440�—900 the carrier brand's box is identical before and after opening: x=598.85, y=549.30, width=242.29, height=21.76 CSS px. Its closest physical assembly is `carrier`. In Full motion, the inserted SpendWise card was captured sliding inside the lens; its motion progressed from approximately -370.7 to -5 SVG units with visible opacity up to 0.88. At loaded, the passage and external card are absent and the ledger symbol is present. A complete close/Henshin/reopen/eject cycle succeeded and cleared the lens afterward. A background native cycle verified Learn passage/card 002 followed by brackets; Reduced motion insertion of KREV1 produced the monogram and cleared the passage. No console warnings/errors were returned in the tested background flow.
 
-Responsive checks at 390×844 and 320×568 retain all nine language marks, the carrier branding, enclosed card and correct monogram, with no horizontal overflow. The final 320px screenshot accompanies the desktop evidence. The animated GIF is assembled from 11 real native browser capture frames plus a steady final frame, cropped to the Driver; playback timing is illustrative and includes a final hold for review. A full-page mid-insertion PNG is also supplied. No paused/faked app state or substituted card artwork was used.
+Responsive checks at 390�—844 and 320�—568 retain all nine language marks, the carrier branding, enclosed card and correct monogram, with no horizontal overflow. The final 320px screenshot accompanies the desktop evidence. The animated GIF is assembled from 11 real native browser capture frames plus a steady final frame, cropped to the Driver; playback timing is illustrative and includes a final hold for review. A full-page mid-insertion PNG is also supplied. No paused/faked app state or substituted card artwork was used.
 
 B01: fixed coordinates/assembly ownership and closed/open views. B02/B03: actual captured movement, circular clipping, native card changes and three-card tests. B04/B07: deadline guards, reduced/full motion tests and native selector usage. B05: mobile and desktop evidence. B06: local gates; exact-revision remote delivery is recorded in the supplied report.
 
@@ -170,13 +170,13 @@ The deck retains its original front artwork. The reader side reuses the physical
 
 The current browser still advertises reduced motion. Full motion is now the requested default; the optional selector also offers Device setting and Reduced motion. A validated, versioned local-storage choice survives reload. Invalid or denied storage falls back to the visible motion without blocking the controller. No OS preference changes.
 
-KREV1 is engraved on the fixed rear carrier plate, painted before the rotating reader. The plate occupies SVG y=51–78 so it is exposed above the closed reader, while the open reader naturally covers the lettering. At 1280×720 the brand box stays at x=555.07, y=461.19, w=169.86, h=14.75 CSS px between closed/open, with transform `none`. SVG paint order places the brand before the reader; closed/open screenshots show the required occlusion.
+KREV1 is engraved on the fixed rear carrier plate, painted before the rotating reader. The plate occupies SVG y=51–78 so it is exposed above the closed reader, while the open reader naturally covers the lettering. At 1280�—720 the brand box stays at x=555.07, y=461.19, w=169.86, h=14.75 CSS px between closed/open, with transform `none`. SVG paint order places the brand before the reader; closed/open screenshots show the required occlusion.
 
 **Local gates:** 38/38 tests pass; strict TypeScript and production build pass, with 16.2 kB route / 119 kB first load. Existing all-card lifecycle cases now check one shared card source and the same lens/use nodes through insertion, seating and extraction. Additional cases cover saved-mode remount, invalid storage and storage denial. Automatic reduced mode still passes the shortened full cycle and timer cleanup. React review confirms stable unique SVG IDs, memoized hardware, client-only storage access, unchanged pointer/run guards, native controls and listener cleanup. No new runtime dependency or remote asset.
 
 **Native production browser:** Default Full motion is present despite the device media query being reduced. Actual insertion captures maintain opacity 1 and one card source while translation progresses from -360.93 to 0 SVG units. Fourteen real captures include the settled frame. Five closure captures show reader rotation from about 87.3° through intermediate positions to 0°, while the lens layer has transform `none`; the printing therefore turns with its reader. The resulting 19-frame GIF shows insertion followed by closure, with illustrative review holds. Full/Reduced selections survive actual reloads. A complete SpendWise keyboard close/Henshin/reopen/eject flow succeeds. Real pointer drag inserts Learn, and real upward drag clears it. All three card identities were observed under the lens.
 
-**Responsive:** At 320×568 KREV1 is enclosed, all nine marks remain, no horizontal overflow, and the extraction target is 57.59×44px. Its active stage has bottom 408.66px, stays above the dock, and the document height is 568px. At 390×844 Learn is enclosed, all nine marks remain, no overflow, and the target is 70.19×44px. No warnings/errors were returned in the tested browser flow. These are desktop browser viewport checks, not physical touch-device certification.
+**Responsive:** At 320�—568 KREV1 is enclosed, all nine marks remain, no horizontal overflow, and the extraction target is 57.59�—44px. Its active stage has bottom 408.66px, stays above the dock, and the document height is 568px. At 390�—844 Learn is enclosed, all nine marks remain, no overflow, and the target is 70.19�—44px. No warnings/errors were returned in the tested browser flow. These are desktop browser viewport checks, not physical touch-device certification.
 
 M01: default mode and native saved-choice reloads, persistence/fallback tests. M02: shared source/node tests and actual insertion/extraction captures. M03: intermediate reader matrices and zero independent lens transform. M04: paint order, invariant brand position and actual occlusion images. M05: full regression suite, native pointer/keyboard cycles and all-card identities. M06: mobile measurements and screenshots. M07: local gates; exact-revision CI/preview/archive evidence is appended to the delivered report.
 
@@ -190,9 +190,9 @@ The FSM accepts handle operations from empty `open` as well as loaded/closed sta
 
 **Local gates:** 42/42 tests, strict TypeScript and production build pass; route 16.2 kB / 119 kB first load. New coverage verifies empty closure without Henshin, reopening and inserting afterward, Full/Reduced tap equivalents, partial/foreign-pointer/lost-capture recovery and stale callbacks. The 10,000-event invariant walk and all existing three-card, continuous-surface, resize, timeline, storage and project-reveal tests pass. React review finds no new effect/listener, dependency or external asset; the memoized hardware, stable SVG IDs and native controls remain.
 
-**Native production browser:** At 1280×720 a short inward pointer drag restores empty `open`, openness 1, with the correct push instruction. A full inward drag reaches `idle` without a card, stage or Henshin identity. A captured keyboard closure shows the reader at approximately 87.3°, 74.1°, 47.2°, 24.8°, 10.5°, 2.2° and 0°; every observed frame lacks card/project content, and completion is idle. Reduced-motion tap Open/Close also returns idle. A real pointer cycle inserts SpendWise into the new aperture, closes through Henshin, reopens/extracts, then closes empty successfully. The raised slot group is absent and the input target has no visible text. The GIF uses eight native screenshots with illustrative review holds.
+**Native production browser:** At 1280�—720 a short inward pointer drag restores empty `open`, openness 1, with the correct push instruction. A full inward drag reaches `idle` without a card, stage or Henshin identity. A captured keyboard closure shows the reader at approximately 87.3°, 74.1°, 47.2°, 24.8°, 10.5°, 2.2° and 0°; every observed frame lacks card/project content, and completion is idle. Reduced-motion tap Open/Close also returns idle. A real pointer cycle inserts SpendWise into the new aperture, closes through Henshin, reopens/extracts, then closes empty successfully. The raised slot group is absent and the input target has no visible text. The GIF uses eight native screenshots with illustrative review holds.
 
-At 320×568 and 390×844 the viewport has no horizontal overflow, all nine marks remain, and targets are respectively 57.59×44px and 70.19×44px. Both native empty-close cycles succeed; right-handle arrow directions were exercised at 320px. A loaded KREV1 card remains enclosed in the 320px view. No console warnings/errors were returned. Temporary viewport settings were reset. These are browser viewport checks rather than real-touch hardware certification.
+At 320�—568 and 390�—844 the viewport has no horizontal overflow, all nine marks remain, and targets are respectively 57.59�—44px and 70.19�—44px. Both native empty-close cycles succeed; right-handle arrow directions were exercised at 320px. A loaded KREV1 card remains enclosed in the 320px view. No console warnings/errors were returned. Temporary viewport settings were reset. These are browser viewport checks rather than real-touch hardware certification.
 
 E01/E02: actual open/closed images and physical drawing layers. E03/E04: pointer, keyboard, reduced/tap cycles, recovery/stale tests and generated invariant walk. E05: full regression suite and real loaded cycle followed by empty closure. E06: mobile measurements and screenshots. E07: local gates; exact-revision remote delivery is appended to the supplied report.
 
@@ -208,7 +208,7 @@ Audio is opt-in. Context creation/resume occurs in the Sound button gesture; ann
 
 **Local gates:** 48/48 tests, strict TypeScript and production build pass; route 18.4 kB / 121 kB first load. Existing three-card lifecycle cases now verify occupancy, matching accents, cancellation and restoration. Six audio cases cover bounded scores, correct announcement identity, future-source stop/disconnect, waiting/mute/disposal, offline asset fallback, PCM validity and opt-in/controller deadline independence. All empty-close, pointer, resize, storage, continuous-surface and 10,000-event invariant tests pass. React review confirms lazy context construction, client-only audio access, stable memoized hardware and listener cleanup. No runtime dependency added; the four small original audio assets are the only new runtime files.
 
-**Native browser:** With Learn loaded, the selected card has opacity 0.24 and grayscale(0.35)/saturate(0.55)/blur(0.45px); other disabled cards have opacity 0.72 and their ordinary shadow. After extraction all occupied classes clear; once the normal 180ms transition settles, all three cards have opacity 1 and ordinary shadows. A Sound On read/close cycle and mid-Henshin mute complete without warnings/errors. The observed resource inventory includes all four local announcement WAVs. Matching-color native cycles completed for all three cards. Empty closure still returns idle. At 320×568 KREV1 is enclosed, exactly one deck card is marked occupied, no horizontal overflow and the target remains 44px high. Temporary viewport settings were reset.
+**Native browser:** With Learn loaded, the selected card has opacity 0.24 and grayscale(0.35)/saturate(0.55)/blur(0.45px); other disabled cards have opacity 0.72 and their ordinary shadow. After extraction all occupied classes clear; once the normal 180ms transition settles, all three cards have opacity 1 and ordinary shadows. A Sound On read/close cycle and mid-Henshin mute complete without warnings/errors. The observed resource inventory includes all four local announcement WAVs. Matching-color native cycles completed for all three cards. Empty closure still returns idle. At 320�—568 KREV1 is enclosed, exactly one deck card is marked occupied, no horizontal overflow and the target remains 44px high. Temporary viewport settings were reset.
 
 **Audio review artifact:** `driver-reader-henshin-v9.wav` renders the same score/scheduler and voice assets offline: insertion, latch and SpendWise Henshin. It is stereo 44.1kHz, 2.702s, peak 0.1782 and RMS 0.02785, with finite samples and no clipping. This is a review rendering rather than a recording of browser output; the live browser adds its compressor and loaded-state waiting loop. Voice data is explicitly resampled in the scratch renderer to avoid the legacy renderer's endpoint issue. The scratch rendering dependency is outside the app and is not shipped. Subjective similarity and speaker output levels are not certified.
 
@@ -259,16 +259,16 @@ Three full-cycle preview WAVs use the same DriverAudio class/scheduler/assets in
 Native localhost: asset inventory observes all13 versioned WAVs after Sound On. A real outward handle drag, KREV1 insertion→closure→active project, ability activation, reopen/extract, Learn insertion and mid-Henshin Sound Off complete without warnings/errors. Lens aperture still resolves to its existing definition and the project panel retains Lenis.
 
 
-# V13 � playlist-informed original Driver sound
+# V13 — playlist-informed original Driver sound
 
 Reference: [Kamen Rider Decade Henshin Sound playlist](https://www.youtube.com/playlist?list=PL8fr9oxKtrRmprlWZtbvJLWNNwFPXgz-X),21 entries by Masaki Yamato. The description identifies Kamen Rider Legends / Decade Flash Belt, so this is a fan simulation reference, not an authenticated film sound master. Decade (XGVBDRZbljw), Kuuga (ABY8B8CNat0) and Kiva (T6qFls-xUqk) were decoded for local signal analysis only.
 
-Measured Decade steady section11�15s: strongest envelope autocorrelation candidate1.21s (normalised correlation0.506), spectral clusters267/964/1307/1597/1869/2092/2643/3141/4195Hz. These are mixture measurements, not certified individual sound stems. Automatic speech transcription is unreliable and was not used to certify actor identity or exact wording.
+Measured Decade steady section11–15s: strongest envelope autocorrelation candidate1.21s (normalised correlation0.506), spectral clusters267/964/1307/1597/1869/2092/2643/3141/4195Hz. These are mixture measurements, not certified individual sound stems. Automatic speech transcription is unreliable and was not used to certify actor identity or exact wording.
 
 Original synthesis uses four alternating tone clusters in a1.21s quiet waiting loop, resonant optical insertion, and a2.37s transformation with precharge, scanner lock, barcode bursts, descending metallic ribbon and armour impact. Frequencies inform original oscillators; no reference PCM or actor clone is shipped. Voice is stock Piper speaker2,0.82 resampling speed,117Hz vocoder carrier with70% dry /30% vocoded mix; less modulation and saturation retain more speech clarity. Open/close/movement/extraction retain the prior original Foley. The Attack Ride window increases to0.84s to include the entire0.8238s file.
 
 All13 current assets are versioned under /audio/v13/. PCM16,24kHz, mono voice/stereo effects,661422 bytes total. Standby gain0.18, mechanical timings remain unchanged. Sound is off until enabled; cancellation, hidden-page handling and procedural fallback remain.
 
-Verification:64 tests, strict TypeScript and Next.js production build pass. Route74.1kB /177kB first-load JS. Three full cycles were rendered using the same DriverAudio scheduler and shipped files:6.281s, stereo44.1kHz, peak0.3405, RMS0.0532�0.0533. No non-finite samples or clipping. These are technical checks, not a subjective listening certification; perceived closeness must be judged by the listener.
+Verification:64 tests, strict TypeScript and Next.js production build pass. Route74.1kB /177kB first-load JS. Three full cycles were rendered using the same DriverAudio scheduler and shipped files:6.281s, stereo44.1kHz, peak0.3405, RMS0.0532–0.0533. No non-finite samples or clipping. These are technical checks, not a subjective listening certification; perceived closeness must be judged by the listener.
 
 Descript's earlier EQ candidate was not substituted: its agent cannot listen or generate new effects. This revision instead uses new playlist measurements and original DSP.
