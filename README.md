@@ -30,7 +30,7 @@ For development, use `npm run dev`. The production site is connected to the exis
 
 Optional **Keyboard & tap controls** exposes equivalent operations one step at a time. Animation defaults to Full motion and remembers your choice; Device setting follows the device preference and Reduced motion shortens effects while preserving every logical step. Sound defaults off. GSAP coordinates visual arrival/Henshin independently of the mechanical deadlines. Lenis smooths only the inner project panel; native touch and Reduced motion stay direct. Card glare and staggered project text/content reveals preserve native button hit areas.
 
-Enable **Sound** for the original electronic reader sequence: robotic card announcements, barcode sweep, waiting texture, latch and layered transformation. Voices preload only after enabling sound; missing audio never blocks the Driver. The occupied deck card is dimmed until extraction. Henshin's ring, scanner, glass light and identification use that card's accent.
+Enable **Sound** for the reference-grounded original reader pack: neural/vocoded category and project announcements, separate open/close latches, card friction/optical scan, movement-responsive grain, holding texture and layered stereo transformation. Ordinary Kamenride wording is distinguished from unreadable-card triple beeps and Final Formride repetitions. Thirteen versioned PCM assets preload only after enabling sound; missing audio never blocks the Driver. The occupied deck card is dimmed until extraction. Henshin's ring, scanner, glass light and identification use that card's accent.
 
 An empty open Driver can also close. It returns to standby; transformation and project content require an inserted card.
 
@@ -47,6 +47,7 @@ An empty open Driver can also close. It returns to standby; transformation and p
 - [Card feedback, Henshin colors and electronic reader audio](docs/CARD-FEEDBACK-HENSHIN-AUDIO.md)
 - [One-shot arrival, closed-driver card selection and reader rhythm](docs/ENTRY-CARD-SELECTION-AUDIO.md)
 - [GSAP, Lenis and selected React Bits integration](docs/ANIMATION-LIBRARY-INTEGRATION.md)
+- [Reference-grounded audio rebuild](docs/REFERENCE-AUDIO-REBUILD.md)
 - [Original announcement provenance](public/audio/PROVENANCE.md)
 - [Verification and delivery record](docs/VERIFICATION.md)
 - `src/lib/driver-machine.ts`: pure guarded transitions and run tokens

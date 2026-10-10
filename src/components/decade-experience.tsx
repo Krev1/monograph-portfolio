@@ -185,7 +185,7 @@ export default function DecadeExperience() {
         ? 1 - model.openness
         : 0;
   function sound(type: DriverSound) {
-    if (!soundEnabled) return;
+    if (!soundEnabled || document.visibilityState === "hidden") return;
     try {
       audioRef.current?.play(type, modelRef.current.cardId);
     } catch {
@@ -229,6 +229,16 @@ export default function DecadeExperience() {
       audioRef.current?.setStandby(false);
     };
   }, [soundEnabled, model.state]);
+  useEffect(() => {
+    const moving =
+      !model.settling &&
+      ["opening", "closing", "reopening", "ejecting"].includes(model.state);
+    const progress = model.state === "ejecting" ? lift : model.openness;
+    audioRef.current?.setMechanism(
+      soundEnabled && moving && document.visibilityState !== "hidden",
+      progress,
+    );
+  }, [soundEnabled, model.state, model.settling, model.openness, lift]);
 
   // Rendering and optional audio cannot hold the guarded mechanical deadline.
   useEffect(() => {
@@ -262,7 +272,9 @@ export default function DecadeExperience() {
             ? "insert"
             : model.state === "ejecting"
               ? "eject"
-              : "snap",
+              : model.state === "closing"
+                ? "close"
+                : "open",
       );
     }
     const timer = window.setTimeout(finish, duration);
