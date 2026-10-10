@@ -1,0 +1,780 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import { gsap } from "gsap";
+import DecadeExperience from "../src/components/decade-experience";
+import {
+  CARD_INSERT_DURATION,
+  HENSHIN_DURATION,
+} from "../src/lib/driver-timeline";
+const advance = async (time: number) => {
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(time);
+  });
+};
+const left = () => screen.getByRole("button", { name: /^Left handle/ });
+const card = (name = "SPENDWISE AI") =>
+  screen.getByRole("button", { name: "Insert " + name + " project card" });
+const state = () => document.querySelector("main")!.getAttribute("data-state");
+async function open() {
+  fireEvent.keyDown(left(), { key: "ArrowLeft" });
+  await advance(180);
+}
+async function load() {
+  await open();
+  fireEvent.click(card());
+  await advance(CARD_INSERT_DURATION);
+}
+beforeEach(() => {
+  vi.useFakeTimers();
+  window.localStorage.clear();
+  vi.mocked(window.matchMedia).mockImplementation(
+    () =>
+      ({
+        matches: false,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      }) as unknown as MediaQueryList,
+  );
+});
+describe("Controller integration", () => {
+  it("reveals two-sided cards once and stops the arrival flip when a card is held", async () => {
+    render(<DecadeExperience />);
+    expect(document.querySelector("main")!.classList.contains("is-entering")).toBe(true);
+    expect(card().querySelector(".card-flip-front [data-card-side=front]")).not.toBeNull();
+    expect(card().querySelector(".card-flip-back [data-card-side=reader]")).not.toBeNull();
+    fireEvent.pointerDown(card(), { pointerId: 1, button: 0 });
+    expect(card().classList.contains("is-face-down")).toBe(true);
+    expect(document.querySelector("main")!.classList.contains("is-entering")).toBe(false);
+    expect(state()).toBe("idle");
+    fireEvent.pointerCancel(card(), { pointerId: 1 });
+    expect(card().classList.contains("is-face-down")).toBe(false);
+    await open();
+    expect(document.querySelector("main")!.classList.contains("is-entering")).toBe(false);
+  });
+  it("flips a held drag card and restores the front after an invalid drop", async () => {
+    render(<DecadeExperience />);
+    await open();
+    fireEvent.pointerDown(card(), { pointerId: 1, clientX: 100, clientY: 200 });
+    expect(document.querySelector(".drag-card.is-face-down .card-flip-back")).not.toBeNull();
+    fireEvent.pointerMove(card(), { pointerId: 1, clientX: 160, clientY: 240 });
+    fireEvent.pointerUp(card(), { pointerId: 1, clientX: 160, clientY: 240 });
+    expect(state()).toBe("open");
+    expect(card().classList.contains("is-face-down")).toBe(false);
+    expect(document.querySelector(".drag-card")).toBeNull();
+  });
+  it("a paused animation renderer cannot delay project activation or leave the Driver undocked", async () => {
+    render(<DecadeExperience />);
+    const wasPaused = gsap.globalTimeline.paused();
+    gsap.globalTimeline.pause();
+    try {
+      fireEvent.click(card("LEARN"));
+      await advance(180);
+      await advance(CARD_INSERT_DURATION);
+      fireEvent.keyDown(left(), { key: "ArrowRight" });
+      await advance(180);
+      await advance(HENSHIN_DURATION - 1);
+      expect(state()).toBe("transforming");
+      expect(screen.queryByTestId("project-stage")).toBeNull();
+      await advance(1);
+      expect(state()).toBe("active");
+      expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
+        "LEARN",
+      );
+      expect(
+        screen.getByTestId("driver-scene").style.getPropertyValue("--dock"),
+      ).toBe("1");
+      expect(
+        screen.getByTestId("project-stage").getAttribute("data-scroll-engine"),
+      ).toBe("native");
+      fireEvent.keyDown(left(), { key: "ArrowLeft" });
+      await advance(180);
+      expect(state()).toBe("loaded");
+      expect(
+        screen.getByTestId("driver-scene").style.getPropertyValue("--dock"),
+      ).toBe("0");
+    } finally {
+      gsap.globalTimeline.paused(wasPaused);
+    }
+  });
+  it.each(["SPENDWISE AI", "LEARN", "KREV1 PORTFOLIO"])(
+    "choosing %s while closed opens before inserting, and never skips Henshin",
+    async (name) => {
+      render(<DecadeExperience />);
+      expect((card(name) as HTMLButtonElement).disabled).toBe(false);
+      fireEvent.click(card(name), { detail: 1 });
+      expect(state()).toBe("opening");
+      expect(screen.queryByTestId("seated-card")).toBeNull();
+      await advance(179);
+      expect(state()).toBe("opening");
+      await advance(1);
+      expect(state()).toBe("inserting");
+      expect(screen.queryByTestId("project-stage")).toBeNull();
+      await advance(CARD_INSERT_DURATION);
+      expect(state()).toBe("loaded");
+      fireEvent.keyDown(left(), { key: "ArrowRight" });
+      await advance(180);
+      await advance(HENSHIN_DURATION - 1);
+      expect(state()).toBe("transforming");
+      expect(screen.queryByTestId("project-stage")).toBeNull();
+      await advance(1);
+      expect(state()).toBe("active");
+      expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(name);
+    },
+  );
+  it("inserts a stationary pointer tap on an open reader exactly once", async () => {
+    render(<DecadeExperience />);
+    await open();
+    fireEvent.pointerDown(card(), { pointerId: 1, clientX: 100, clientY: 200 });
+    fireEvent.pointerMove(card(), { pointerId: 1, clientX: 102, clientY: 201 });
+    expect(state()).toBe("cardDragging");
+    fireEvent.pointerUp(card(), { pointerId: 1, clientX: 102, clientY: 201 });
+    expect(state()).toBe("inserting");
+    fireEvent.click(card(), { detail: 1 });
+    await advance(CARD_INSERT_DURATION);
+    expect(state()).toBe("loaded");
+  });
+  it("invalid and cancelled drags ignore their trailing clicks, including returning to the start", async () => {
+    render(<DecadeExperience />);
+    await open();
+    fireEvent.pointerDown(card(), { pointerId: 1, clientX: 100, clientY: 200 });
+    fireEvent.pointerMove(card(), { pointerId: 1, clientX: 150, clientY: 240 });
+    fireEvent.pointerUp(card(), { pointerId: 1, clientX: 100, clientY: 200 });
+    fireEvent.click(card(), { detail: 1 });
+    expect(state()).toBe("open");
+    fireEvent.pointerDown(card(), { pointerId: 2, clientX: 100, clientY: 200 });
+    fireEvent.pointerCancel(card(), { pointerId: 2 });
+    fireEvent.click(card(), { detail: 1 });
+    expect(state()).toBe("open");
+    fireEvent.pointerDown(card(), { pointerId: 3, clientX: 100, clientY: 200 });
+    fireEvent.pointerUp(card(), { pointerId: 3, clientX: 100, clientY: 200 });
+    await advance(CARD_INSERT_DURATION);
+    expect(state()).toBe("loaded");
+  });
+  it.each(["full", "reduced"])(
+    "closes an empty reader through tap controls in %s motion without Henshin",
+    async (mode) => {
+      render(<DecadeExperience />);
+      fireEvent.click(screen.getByRole("button", { name: /KEYBOARD & TAP/ }));
+      fireEvent.change(screen.getByRole("combobox", { name: "Animation" }), {
+        target: { value: mode },
+      });
+      const duration = mode === "reduced" ? 60 : 180;
+      fireEvent.click(screen.getByRole("button", { name: "Open Driver" }));
+      await advance(duration);
+      expect(state()).toBe("open");
+      expect(
+        (
+          screen.getByRole("button", {
+            name: "Open Driver",
+          }) as HTMLButtonElement
+        ).disabled,
+      ).toBe(true);
+      const closeButton = screen.getByRole("button", {
+        name: "Push handles in",
+      });
+      expect((closeButton as HTMLButtonElement).disabled).toBe(false);
+      fireEvent.click(closeButton);
+      expect(state()).toBe("closing");
+      await advance(duration - 1);
+      expect(state()).toBe("closing");
+      expect(screen.queryByTestId("project-stage")).toBeNull();
+      await advance(1);
+      expect(state()).toBe("idle");
+      await advance(HENSHIN_DURATION);
+      expect(state()).toBe("idle");
+      expect(screen.queryByTestId("lens-emblem")).toBeNull();
+      expect(screen.queryByTestId("project-stage")).toBeNull();
+      fireEvent.click(screen.getByRole("button", { name: "Open Driver" }));
+      await advance(duration);
+      fireEvent.click(card());
+      await advance(mode === "reduced" ? 60 : CARD_INSERT_DURATION);
+      expect(state()).toBe("loaded");
+    },
+  );
+  it("restores an empty open reader after short or cancelled pointer closure, then closes by keyboard", async () => {
+    render(<DecadeExperience />);
+    await open();
+    const handle = left();
+    fireEvent.keyDown(handle, { key: "ArrowLeft" });
+    expect(state()).toBe("open");
+    fireEvent.pointerDown(handle, { pointerId: 1, clientX: 200 });
+    fireEvent.pointerUp(handle, { pointerId: 1, clientX: 210 });
+    expect(state()).toBe("open");
+    fireEvent.pointerDown(handle, { pointerId: 1, clientX: 200 });
+    fireEvent.pointerMove(handle, { pointerId: 1, clientX: 300 });
+    fireEvent.pointerUp(handle, { pointerId: 2, clientX: 300 });
+    expect(state()).toBe("closing");
+    fireEvent.lostPointerCapture(handle, { pointerId: 1 });
+    expect(state()).toBe("open");
+    expect(
+      screen.getByTestId("driver-scene").style.getPropertyValue("--open"),
+    ).toBe("1");
+    fireEvent.pointerUp(handle, { pointerId: 1, clientX: 300 });
+    expect(state()).toBe("open");
+    fireEvent.keyDown(handle, { key: "ArrowRight" });
+    await advance(180);
+    expect(state()).toBe("idle");
+    expect(screen.queryByTestId("project-stage")).toBeNull();
+  });
+  it("tap controls preserve opening, insertion and closing before reveal", async () => {
+    render(<DecadeExperience />);
+    fireEvent.click(screen.getByRole("button", { name: /KEYBOARD & TAP/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Push handles in" }));
+    expect(state()).toBe("idle");
+    fireEvent.click(screen.getByRole("button", { name: "Open Driver" }));
+    expect(state()).toBe("opening");
+    await advance(180);
+    fireEvent.pointerDown(card(), {
+      pointerId: 1,
+      pointerType: "touch",
+      clientX: 100,
+      clientY: 200,
+    });
+    expect(state()).toBe("open");
+    fireEvent.click(card(), { detail: 1 });
+    expect(state()).toBe("inserting");
+    await advance(CARD_INSERT_DURATION);
+    fireEvent.click(screen.getByRole("button", { name: "Push handles in" }));
+    await advance(180);
+    expect(screen.queryByTestId("project-stage")).toBeNull();
+    await advance(HENSHIN_DURATION);
+    expect(state()).toBe("active");
+  });
+  it("losing window focus cancels a held gesture", () => {
+    render(<DecadeExperience />);
+    fireEvent.pointerDown(left(), { pointerId: 1, clientX: 200 });
+    fireEvent.pointerMove(left(), { pointerId: 1, clientX: 100 });
+    fireEvent.blur(window);
+    expect(state()).toBe("idle");
+  });
+  it("reveals content only after the complete keyboard cycle, then activates an evidenced ability", async () => {
+    render(<DecadeExperience />);
+    expect(screen.queryByTestId("project-stage")).toBeNull();
+    await load();
+    expect(state()).toBe("loaded");
+    fireEvent.keyDown(left(), { key: "ArrowRight" });
+    expect(state()).toBe("closing");
+    await advance(180);
+    expect(state()).toBe("transforming");
+    expect(screen.queryByTestId("project-stage")).toBeNull();
+    await advance(HENSHIN_DURATION - 1);
+    expect(screen.queryByTestId("project-stage")).toBeNull();
+    await advance(1);
+    expect(state()).toBe("active");
+    expect(screen.getByTestId("project-stage")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /TOOL.*PYTHON/ }));
+    expect(
+      screen
+        .getByRole("link", { name: /Transaction domain/ })
+        .getAttribute("href"),
+    ).toContain("e2221c7");
+  });
+  it("pointer cancellation cannot open even after crossing the threshold", () => {
+    render(<DecadeExperience />);
+    const handle = left();
+    fireEvent.pointerDown(handle, { pointerId: 1, clientX: 200 });
+    fireEvent.pointerMove(handle, { pointerId: 1, clientX: 100 });
+    expect(state()).toBe("opening");
+    fireEvent.pointerCancel(handle, { pointerId: 1, clientX: 100 });
+    expect(state()).toBe("idle");
+    fireEvent.pointerUp(handle, { pointerId: 1, clientX: 100 });
+    expect(state()).toBe("idle");
+  });
+  it("ignores a second finger and wrong pointer cancellation", () => {
+    render(<DecadeExperience />);
+    const handle = left();
+    fireEvent.pointerDown(handle, { pointerId: 1, clientX: 200 });
+    fireEvent.pointerMove(handle, { pointerId: 1, clientX: 180 });
+    const progress = screen
+      .getByTestId("driver-scene")
+      .style.getPropertyValue("--open");
+    fireEvent.pointerDown(handle, { pointerId: 2, clientX: 200 });
+    fireEvent.pointerMove(handle, { pointerId: 2, clientX: 0 });
+    fireEvent.pointerCancel(handle, { pointerId: 2 });
+    expect(
+      screen.getByTestId("driver-scene").style.getPropertyValue("--open"),
+    ).toBe(progress);
+    expect(state()).toBe("opening");
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(state()).toBe("idle");
+  });
+  it("cancelled card drops cannot commit, while a real downward drop does", async () => {
+    render(<DecadeExperience />);
+    await open();
+    const slot = screen.getByRole("button", {
+      name: "Project card insertion slot",
+    });
+    vi.spyOn(slot, "getBoundingClientRect").mockReturnValue({
+      left: 400,
+      right: 500,
+      top: 450,
+      bottom: 510,
+      width: 100,
+      height: 60,
+    } as DOMRect);
+    const project = card();
+    fireEvent.pointerDown(project, {
+      pointerId: 1,
+      clientX: 100,
+      clientY: 200,
+    });
+    fireEvent.pointerMove(project, {
+      pointerId: 1,
+      clientX: 450,
+      clientY: 470,
+    });
+    fireEvent.pointerCancel(project, {
+      pointerId: 1,
+      clientX: 450,
+      clientY: 470,
+    });
+    expect(state()).toBe("open");
+    fireEvent.pointerUp(project, { pointerId: 1, clientX: 450, clientY: 470 });
+    expect(state()).toBe("open");
+    fireEvent.pointerDown(project, {
+      pointerId: 1,
+      clientX: 100,
+      clientY: 200,
+    });
+    fireEvent.pointerUp(project, { pointerId: 1, clientX: 450, clientY: 470 });
+    expect(state()).toBe("inserting");
+    await advance(CARD_INSERT_DURATION);
+    expect(state()).toBe("loaded");
+  });
+  it("wrong closing direction and lost capture keep the same loaded card", async () => {
+    render(<DecadeExperience />);
+    await load();
+    const handle = left();
+    fireEvent.pointerDown(handle, { pointerId: 1, clientX: 200 });
+    fireEvent.pointerUp(handle, { pointerId: 1, clientX: 100 });
+    expect(state()).toBe("loaded");
+    fireEvent.pointerDown(handle, { pointerId: 1, clientX: 200 });
+    fireEvent.pointerMove(handle, { pointerId: 1, clientX: 300 });
+    fireEvent.lostPointerCapture(handle, { pointerId: 1 });
+    expect(state()).toBe("loaded");
+    expect(screen.getByTestId("seated-card").getAttribute("data-card-id")).toBe(
+      "001",
+    );
+    expect(screen.getByTestId("lens-emblem").getAttribute("data-emblem")).toBe(
+      "ledger",
+    );
+  });
+  it("reopens and ejects before activating a different project", async () => {
+    render(<DecadeExperience />);
+    await load();
+    fireEvent.keyDown(left(), { key: "ArrowRight" });
+    await advance(180);
+    await advance(HENSHIN_DURATION);
+    fireEvent.keyDown(left(), { key: "ArrowLeft" });
+    expect(screen.queryByTestId("project-stage")).toBeNull();
+    await advance(180);
+    expect(state()).toBe("loaded");
+    fireEvent.keyDown(screen.getByRole("button", { name: /Eject loaded/ }), {
+      key: "ArrowUp",
+    });
+    await advance(280);
+    expect(state()).toBe("open");
+    fireEvent.click(card("LEARN"));
+    await advance(CARD_INSERT_DURATION);
+    fireEvent.keyDown(left(), { key: "ArrowRight" });
+    await advance(180);
+    await advance(HENSHIN_DURATION);
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("LEARN");
+  });
+  it("completes reduced motion without animationend and cancels timers on unmount", async () => {
+    vi.mocked(window.matchMedia).mockImplementation(
+      () =>
+        ({
+          matches: true,
+          addEventListener: () => {},
+          removeEventListener: () => {},
+        }) as unknown as MediaQueryList,
+    );
+    const view = render(<DecadeExperience />);
+    fireEvent.click(screen.getByRole("button", { name: /KEYBOARD & TAP/ }));
+    fireEvent.change(screen.getByRole("combobox", { name: "Animation" }), {
+      target: { value: "auto" },
+    });
+    fireEvent.keyDown(left(), { key: "ArrowLeft" });
+    await advance(60);
+    fireEvent.click(card());
+    await advance(60);
+    fireEvent.keyDown(left(), { key: "ArrowRight" });
+    await advance(60);
+    await advance(99);
+    expect(state()).toBe("transforming");
+    await advance(1);
+    expect(state()).toBe("active");
+    const scheduled = vi.spyOn(window, "setTimeout"),
+      cleared = vi.spyOn(window, "clearTimeout");
+    fireEvent.keyDown(left(), { key: "ArrowLeft" });
+    const deadline =
+      scheduled.mock.results[scheduled.mock.results.length - 1].value;
+    view.unmount();
+    expect(cleared).toHaveBeenCalledWith(deadline);
+    await advance(5000);
+    expect(document.querySelector("main")).toBeNull();
+  });
+});
+
+describe("Recessed card reader", () => {
+  it("keeps a permanent circular aperture around card prints throughout all project cycles", async () => {
+    render(<DecadeExperience />);
+    const aperture = screen.getByTestId("lens-aperture");
+    const clip = aperture.getAttribute("clip-path")!;
+    const id = clip.slice(5, -1);
+    const circle = document.getElementById(id)!.querySelector("circle")!;
+    expect(circle.getAttribute("r")).toBe("85");
+    expect(circle.getAttribute("cx")).toBe("500");
+    for (const name of ["SPENDWISE AI", "LEARN", "KREV1 PORTFOLIO"]) {
+      if (state() === "idle") await open();
+      fireEvent.click(card(name));
+      expect(screen.getByTestId("lens-card-slide").parentElement).toBe(
+        aperture,
+      );
+      await advance(CARD_INSERT_DURATION);
+      const surface = screen.getByTestId("lens-emblem");
+      expect(surface.parentElement).toBe(aperture);
+      expect(surface.getAttribute("clip-path")).toBeNull();
+      fireEvent.keyDown(left(), { key: "ArrowRight" });
+      await advance(180);
+      await advance(HENSHIN_DURATION);
+      expect(screen.getByTestId("lens-aperture")).toBe(aperture);
+      expect(aperture.getAttribute("clip-path")).toBe(clip);
+      expect(document.getElementById(id)).toBeTruthy();
+      fireEvent.keyDown(left(), { key: "ArrowLeft" });
+      await advance(180);
+      fireEvent.keyDown(screen.getByRole("button", { name: /Eject loaded/ }), {
+        key: "ArrowUp",
+      });
+      await advance(280);
+      expect(screen.getByTestId("lens-aperture")).toBe(aperture);
+    }
+  });
+  it("defaults to full lens motion on a reduced-motion device without skipping the reading state", async () => {
+    vi.mocked(window.matchMedia).mockImplementation(
+      () =>
+        ({
+          matches: true,
+          addEventListener: () => {},
+          removeEventListener: () => {},
+        }) as unknown as MediaQueryList,
+    );
+    render(<DecadeExperience />);
+    expect(
+      document.querySelector("main")!.classList.contains("reduced-motion"),
+    ).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: /KEYBOARD & TAP/ }));
+    const animation = screen.getByRole("combobox", { name: "Animation" });
+    fireEvent.change(animation, { target: { value: "full" } });
+    expect(
+      document.querySelector("main")!.classList.contains("full-motion"),
+    ).toBe(true);
+    expect(
+      document.querySelector("main")!.classList.contains("reduced-motion"),
+    ).toBe(false);
+    await open();
+    fireEvent.click(card());
+    await advance(CARD_INSERT_DURATION / 2);
+    expect(state()).toBe("inserting");
+    expect(
+      screen.getByTestId("lens-card-slide").getAttribute("data-card-id"),
+    ).toBe("001");
+    expect(screen.queryByTestId("project-stage")).toBeNull();
+    await advance(CARD_INSERT_DURATION / 2);
+    expect(state()).toBe("loaded");
+    expect(screen.queryByTestId("lens-card-slide")).toBeNull();
+    expect(screen.getByTestId("lens-emblem").getAttribute("data-emblem")).toBe(
+      "ledger",
+    );
+    fireEvent.change(animation, { target: { value: "reduced" } });
+    expect(
+      document.querySelector("main")!.classList.contains("reduced-motion"),
+    ).toBe(true);
+  });
+  it.each([
+    ["SPENDWISE AI", "001", "ledger", "#ff3ea5"],
+    ["LEARN", "002", "brackets", "#9c63ff"],
+    ["KREV1 PORTFOLIO", "003", "monogram", "#ff8dca"],
+  ])(
+    "reads %s into the lens before Henshin and retains it through reopening",
+    async (name, id, emblem, accent) => {
+      render(<DecadeExperience />);
+      expect(screen.queryByTestId("lens-emblem")).toBeNull();
+      await open();
+      fireEvent.click(card(name));
+      expect(state()).toBe("inserting");
+      expect(card(name).classList.contains("is-in-driver")).toBe(true);
+      expect(
+        document.querySelectorAll(".project-card.is-in-driver"),
+      ).toHaveLength(1);
+      expect(card(name).getAttribute("aria-describedby")).toContain(
+        "occupied-card-note",
+      );
+      expect(
+        document
+          .querySelector("main")!
+          .style.getPropertyValue("--driver-accent"),
+      ).toBe(accent);
+      expect(screen.queryByTestId("lens-emblem")).toBeNull();
+      expect(screen.getByTestId("transient-card")).toBeTruthy();
+      expect(
+        screen.getByTestId("lens-card-slide").getAttribute("data-card-id"),
+      ).toBe(id);
+      const physicalSurface = screen.getByTestId("lens-card-slide");
+      const printedCard = physicalSurface.querySelector("use")!;
+      expect(
+        screen
+          .getByTestId("seated-card")
+          .querySelector("use")!
+          .getAttribute("href"),
+      ).toBe(printedCard.getAttribute("href"));
+      expect(
+        screen
+          .getByTestId("transient-card")
+          .querySelector("use")!
+          .getAttribute("href"),
+      ).toBe(printedCard.getAttribute("href"));
+      await advance(CARD_INSERT_DURATION - 1);
+      expect(state()).toBe("inserting");
+      expect(screen.queryByTestId("lens-emblem")).toBeNull();
+      expect(screen.queryByTestId("project-stage")).toBeNull();
+      fireEvent.keyDown(left(), { key: "ArrowRight" });
+      expect(state()).toBe("inserting");
+      await advance(1);
+      expect(screen.queryByTestId("lens-card-slide")).toBeNull();
+      expect(screen.queryByTestId("transient-card")).toBeNull();
+      expect(screen.getByTestId("lens-emblem")).toBe(physicalSurface);
+      expect(screen.getByTestId("lens-emblem").querySelector("use")).toBe(
+        printedCard,
+      );
+      expect(
+        screen.getByTestId("reader-card-window").getAttribute("data-card-id"),
+      ).toBe(id);
+      const identity = () => {
+        expect(
+          screen.getByTestId("lens-emblem").getAttribute("data-card-id"),
+        ).toBe(id);
+        expect(
+          screen.getByTestId("lens-emblem").getAttribute("data-emblem"),
+        ).toBe(emblem);
+      };
+      identity();
+      expect(screen.queryByTestId("project-stage")).toBeNull();
+      fireEvent.keyDown(left(), { key: "ArrowRight" });
+      identity();
+      await advance(180);
+      identity();
+      expect(
+        document
+          .querySelector("main")!
+          .style.getPropertyValue("--driver-accent"),
+      ).toBe(accent);
+      expect(
+        document
+          .querySelector('radialGradient[id$="-activated"] stop')!
+          .getAttribute("stop-color"),
+      ).toBe(accent);
+      await advance(HENSHIN_DURATION);
+      identity();
+      fireEvent.keyDown(left(), { key: "ArrowLeft" });
+      identity();
+      await advance(180);
+      expect(state()).toBe("loaded");
+      identity();
+      fireEvent.keyDown(screen.getByRole("button", { name: /Eject loaded/ }), {
+        key: "ArrowUp",
+      });
+      identity();
+      expect(screen.getByTestId("lens-emblem").querySelector("use")).toBe(
+        printedCard,
+      );
+      await advance(280);
+      expect(state()).toBe("open");
+      expect(card(name).classList.contains("is-in-driver")).toBe(false);
+      expect(screen.queryByTestId("lens-emblem")).toBeNull();
+      expect(screen.queryByTestId("seated-card")).toBeNull();
+    },
+  );
+  it("cancelled extraction restores the enclosed card and its lens identity", async () => {
+    render(<DecadeExperience />);
+    await load();
+    const slot = screen.getByRole("button", { name: /Eject loaded/ });
+    fireEvent.pointerDown(slot, { pointerId: 1, clientY: 450 });
+    fireEvent.pointerMove(slot, { pointerId: 1, clientY: 370 });
+    expect(state()).toBe("ejecting");
+    expect(screen.getByTestId("transient-card")).toBeTruthy();
+    expect(
+      screen.getByTestId("driver-scene").style.getPropertyValue("--card-pull"),
+    ).not.toBe("0");
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(state()).toBe("loaded");
+    expect(screen.queryByTestId("transient-card")).toBeNull();
+    expect(card().classList.contains("is-in-driver")).toBe(true);
+    expect(
+      screen.getByTestId("driver-scene").style.getPropertyValue("--card-pull"),
+    ).toBe("0");
+    expect(screen.getByTestId("lens-emblem").getAttribute("data-card-id")).toBe(
+      "001",
+    );
+    expect(screen.getByTestId("seated-card").getAttribute("data-card-id")).toBe(
+      "001",
+    );
+  });
+  it("remembers the animation choice across remounts", () => {
+    const view = render(<DecadeExperience />);
+    fireEvent.click(screen.getByRole("button", { name: /KEYBOARD & TAP/ }));
+    fireEvent.change(screen.getByRole("combobox", { name: "Animation" }), {
+      target: { value: "reduced" },
+    });
+    expect(window.localStorage.getItem("krev1-driver-motion-v1")).toBe(
+      "reduced",
+    );
+    view.unmount();
+    render(<DecadeExperience />);
+    expect(
+      document.querySelector("main")!.classList.contains("reduced-motion"),
+    ).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: /KEYBOARD & TAP/ }));
+    fireEvent.change(screen.getByRole("combobox", { name: "Animation" }), {
+      target: { value: "full" },
+    });
+    expect(window.localStorage.getItem("krev1-driver-motion-v1")).toBe("full");
+  });
+  it("ignores an invalid saved choice and handles unavailable storage", async () => {
+    window.localStorage.setItem("krev1-driver-motion-v1", "unknown");
+    const view = render(<DecadeExperience />);
+    expect(
+      document.querySelector("main")!.classList.contains("full-motion"),
+    ).toBe(true);
+    view.unmount();
+    const read = vi
+      .spyOn(Storage.prototype, "getItem")
+      .mockImplementation(() => {
+        throw new Error("Storage blocked");
+      });
+    const write = vi
+      .spyOn(Storage.prototype, "setItem")
+      .mockImplementation(() => {
+        throw new Error("Storage blocked");
+      });
+    try {
+      render(<DecadeExperience />);
+      fireEvent.click(screen.getByRole("button", { name: /KEYBOARD & TAP/ }));
+      fireEvent.change(screen.getByRole("combobox", { name: "Animation" }), {
+        target: { value: "full" },
+      });
+      await load();
+      expect(state()).toBe("loaded");
+      expect(
+        screen.getByTestId("lens-emblem").getAttribute("data-card-id"),
+      ).toBe("001");
+    } finally {
+      read.mockRestore();
+      write.mockRestore();
+    }
+  });
+});
+
+describe("Physical card scale", () => {
+  it("preserves the card's original position and proportions when picked up", async () => {
+    render(<DecadeExperience />);
+    await open();
+    const project = card();
+    vi.spyOn(project, "getBoundingClientRect").mockReturnValue({
+      left: 100,
+      top: 200,
+      right: 218,
+      bottom: 372,
+      width: 118,
+      height: 172,
+    } as DOMRect);
+    fireEvent.pointerDown(project, {
+      pointerId: 1,
+      clientX: 130,
+      clientY: 245,
+    });
+    const ghost = document.querySelector<HTMLDivElement>(".drag-card")!;
+    expect(ghost.style.left).toBe("159px");
+    expect(ghost.style.top).toBe("372px");
+    expect(ghost.querySelector("svg")!.getAttribute("viewBox")).toBe(
+      "0 0 118 172",
+    );
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(state()).toBe("open");
+  });
+  it.each([470, 940])(
+    "keeps extracted card travel equal to pointer travel at scene width %s",
+    async (width) => {
+      render(<DecadeExperience />);
+      await load();
+      const scene = screen.getByTestId("driver-scene");
+      vi.spyOn(scene, "getBoundingClientRect").mockReturnValue({
+        width,
+      } as DOMRect);
+      const slot = screen.getByRole("button", { name: /Eject loaded/ });
+      fireEvent.pointerDown(slot, { pointerId: 1, clientY: 450 });
+      fireEvent.pointerMove(slot, { pointerId: 1, clientY: 410 });
+      const pull = Number(scene.style.getPropertyValue("--card-pull"));
+      const fullTravel = parseFloat(
+        document
+          .querySelector("main")!
+          .style.getPropertyValue("--physical-card-travel"),
+      );
+      expect((pull * fullTravel * width) / 940).toBeCloseTo(40);
+      fireEvent.pointerCancel(slot, { pointerId: 1 });
+      expect(state()).toBe("loaded");
+      expect(
+        screen.getByTestId("lens-emblem").getAttribute("data-card-id"),
+      ).toBe("001");
+    },
+  );
+  it("rescales all cards and cancels a held gesture when the scene resizes, then disconnects on unmount", async () => {
+    let resized:
+      ((entries: { contentRect: { width: number } }[]) => void) | undefined;
+    const observe = vi.fn(),
+      disconnect = vi.fn();
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(callback: typeof resized) {
+          resized = callback;
+        }
+        observe = observe;
+        disconnect = disconnect;
+      },
+    );
+    try {
+      const view = render(<DecadeExperience />);
+      const scene = screen.getByTestId("driver-scene");
+      expect(observe).toHaveBeenCalledWith(scene);
+      act(() => resized!([{ contentRect: { width: 940 } }]));
+      const main = document.querySelector("main")!;
+      expect(main.style.getPropertyValue("--project-card-width")).toBe("236px");
+      expect(main.style.getPropertyValue("--project-card-height")).toBe(
+        "344px",
+      );
+      await open();
+      fireEvent.pointerDown(card(), {
+        pointerId: 1,
+        clientX: 100,
+        clientY: 200,
+      });
+      expect(state()).toBe("cardDragging");
+      expect(
+        document.querySelector(".drag-card svg")!.getAttribute("viewBox"),
+      ).toBe(card().querySelector("svg")!.getAttribute("viewBox"));
+      act(() => resized!([{ contentRect: { width: 470 } }]));
+      expect(state()).toBe("open");
+      expect(document.querySelector(".drag-card")).toBeNull();
+      expect(main.style.getPropertyValue("--project-card-width")).toBe("118px");
+      expect(main.style.getPropertyValue("--project-card-height")).toBe(
+        "172px",
+      );
+      view.unmount();
+      expect(disconnect).toHaveBeenCalledOnce();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});

@@ -1,0 +1,123 @@
+{
+  "version": 13,
+  "sampleRate": 24000,
+  "assets": [
+    {
+      "file": "001.wav",
+      "seconds": 0.6777,
+      "channels": 1,
+      "peak": 0.82,
+      "rms": 0.21387,
+      "bytes": 32576,
+      "sha256": "522230635efea15eba9d75b6ae6758ebc62c9fd09ea518eae666ecbb2cfec825"
+    },
+    {
+      "file": "002.wav",
+      "seconds": 0.5075,
+      "channels": 1,
+      "peak": 0.82,
+      "rms": 0.24651,
+      "bytes": 24402,
+      "sha256": "108e23ae5e63112a9dbcfedeb0395dc47dfd72735aa3780e890edbf5fe00a3c4"
+    },
+    {
+      "file": "003.wav",
+      "seconds": 0.544,
+      "channels": 1,
+      "peak": 0.82,
+      "rms": 0.24136,
+      "bytes": 26158,
+      "sha256": "b75e0e88137a0c400e58c7ae247c97497962877814e3f078ffabc03244ebaba3"
+    },
+    {
+      "file": "ability.wav",
+      "seconds": 0.25,
+      "channels": 2,
+      "peak": 0.72,
+      "rms": 0.24805,
+      "bytes": 24044,
+      "sha256": "bf13aca6e50e19f34d13c5c1bc214dcc87225a330bd21ab4a0766d707f3c2fb6"
+    },
+    {
+      "file": "attack.wav",
+      "seconds": 0.8238,
+      "channels": 1,
+      "peak": 0.82,
+      "rms": 0.19872,
+      "bytes": 39588,
+      "sha256": "975c3807129c99cd93ef54962b5a01e2c6669fd352e37c1ea2f889cf9d1b226f"
+    },
+    {
+      "file": "close.wav",
+      "seconds": 0.175,
+      "channels": 2,
+      "peak": 0.76,
+      "rms": 0.12021,
+      "bytes": 16844,
+      "sha256": "8c9b75e747a3170c5718b36b7a93d7aed73342dced91741e84627ab928e210a1"
+    },
+    {
+      "file": "eject.wav",
+      "seconds": 0.265,
+      "channels": 2,
+      "peak": 0.76,
+      "rms": 0.11937,
+      "bytes": 25484,
+      "sha256": "c35476339d64d59ae4f3312e77d4bad25c66cb804d79289e0fd4d85319e26f26"
+    },
+    {
+      "file": "henshin.wav",
+      "seconds": 2.37,
+      "channels": 2,
+      "peak": 0.73,
+      "rms": 0.11895,
+      "bytes": 227564,
+      "sha256": "84013f31b0f8953f662877fa32cd01d961858603ba8da120ae7cde995f702067"
+    },
+    {
+      "file": "insert.wav",
+      "seconds": 0.32,
+      "channels": 2,
+      "peak": 0.7,
+      "rms": 0.13646,
+      "bytes": 30764,
+      "sha256": "deb38798db77028ba3300b1f948cedff6801aa4cf36d07d97ad1d36bb5cd4f2f"
+    },
+    {
+      "file": "move.wav",
+      "seconds": 0.5,
+      "channels": 2,
+      "peak": 0.65,
+      "rms": 0.11344,
+      "bytes": 48044,
+      "sha256": "3f1dd90388aef83cc34b15b3b7a838b7d9715c9c0e2e645d9ed353eff04d231d"
+    },
+    {
+      "file": "open.wav",
+      "seconds": 0.175,
+      "channels": 2,
+      "peak": 0.76,
+      "rms": 0.11357,
+      "bytes": 16844,
+      "sha256": "ca9286dd94ef83dc57e5ae7dceba12efa14a816a00392b2e8e7cdc888c7ffdef"
+    },
+    {
+      "file": "ride.wav",
+      "seconds": 0.6846,
+      "channels": 1,
+      "peak": 0.82,
+      "rms": 0.23683,
+      "bytes": 32906,
+      "sha256": "ad2cf50cc15f0db6993cb46d1bd3cb5ed022d6d9e6cc26f3c25ec7bf7e74da3d"
+    },
+    {
+      "file": "standby.wav",
+      "seconds": 1.21,
+      "channels": 2,
+      "peak": 0.55,
+      "rms": 0.12361,
+      "bytes": 116204,
+      "sha256": "460e7c8f084df4eca8fb8467014d51652a82e99d9c773af164092e8997893322"
+    }
+  ]
+}
