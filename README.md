@@ -47,6 +47,7 @@ An empty open Driver can also close. It returns to standby; transformation and p
 - [Card feedback, Henshin colors and electronic reader audio](docs/CARD-FEEDBACK-HENSHIN-AUDIO.md)
 - [One-shot arrival, closed-driver card selection and reader rhythm](docs/ENTRY-CARD-SELECTION-AUDIO.md)
 - [GSAP, Lenis and selected React Bits integration](docs/ANIMATION-LIBRARY-INTEGRATION.md)
+- [Two-sided card arrival and selection flips](docs/CARD-FLIP.md)
 - [Playlist-informed sound revision](docs/PLAYLIST-AUDIO-REBUILD.md)
 - [Reference-grounded audio rebuild](docs/REFERENCE-AUDIO-REBUILD.md)
 - [Original announcement provenance](public/audio/PROVENANCE.md)

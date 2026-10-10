@@ -37,6 +37,31 @@ beforeEach(() => {
   );
 });
 describe("Controller integration", () => {
+  it("reveals two-sided cards once and stops the arrival flip when a card is held", async () => {
+    render(<DecadeExperience />);
+    expect(document.querySelector("main")!.classList.contains("is-entering")).toBe(true);
+    expect(card().querySelector(".card-flip-front [data-card-side=front]")).not.toBeNull();
+    expect(card().querySelector(".card-flip-back [data-card-side=reader]")).not.toBeNull();
+    fireEvent.pointerDown(card(), { pointerId: 1, button: 0 });
+    expect(card().classList.contains("is-face-down")).toBe(true);
+    expect(document.querySelector("main")!.classList.contains("is-entering")).toBe(false);
+    expect(state()).toBe("idle");
+    fireEvent.pointerCancel(card(), { pointerId: 1 });
+    expect(card().classList.contains("is-face-down")).toBe(false);
+    await open();
+    expect(document.querySelector("main")!.classList.contains("is-entering")).toBe(false);
+  });
+  it("flips a held drag card and restores the front after an invalid drop", async () => {
+    render(<DecadeExperience />);
+    await open();
+    fireEvent.pointerDown(card(), { pointerId: 1, clientX: 100, clientY: 200 });
+    expect(document.querySelector(".drag-card.is-face-down .card-flip-back")).not.toBeNull();
+    fireEvent.pointerMove(card(), { pointerId: 1, clientX: 160, clientY: 240 });
+    fireEvent.pointerUp(card(), { pointerId: 1, clientX: 160, clientY: 240 });
+    expect(state()).toBe("open");
+    expect(card().classList.contains("is-face-down")).toBe(false);
+    expect(document.querySelector(".drag-card")).toBeNull();
+  });
   it("a paused animation renderer cannot delay project activation or leave the Driver undocked", async () => {
     render(<DecadeExperience />);
     const wasPaused = gsap.globalTimeline.paused();

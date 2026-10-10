@@ -70,6 +70,20 @@ function CardFace({
     </svg>
   );
 }
+function FlippingCard({ project }: { project: PortfolioProject }) {
+  return (
+    <span className="card-flip-arrival">
+      <span className="card-flip">
+        <span className="card-flip-face card-flip-front">
+          <CardFace project={project} />
+        </span>
+        <span className="card-flip-face card-flip-back">
+          <CardFace project={project} readerSide />
+        </span>
+      </span>
+    </span>
+  );
+}
 function useReducedMotion() {
   const [reduced, setReduced] = useState(false);
   useEffect(() => {
@@ -91,6 +105,7 @@ export default function DecadeExperience() {
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [notice, setNotice] = useState("");
   const [queuedCard, setQueuedCard] = useState<ProjectId | null>(null);
+  const [backCard, setBackCard] = useState<ProjectId | null>(null);
   const [entering, setEntering] = useState(true);
   const suppressCardClick = useRef(false);
   useEffect(() => {
@@ -127,6 +142,10 @@ export default function DecadeExperience() {
   const lease = useRef<Lease | null>(null);
   const modelRef = useRef(model);
   modelRef.current = model;
+  useEffect(() => {
+    if (model.state === "open" && !model.cardId && !queuedCard && !lease.current)
+      setBackCard(null);
+  }, [model.state, model.cardId, queuedCard]);
   const scopeRef = useRef<HTMLElement>(null);
   const sceneRef = useRef<HTMLDivElement>(null);
   useDriverMotion({
@@ -333,10 +352,14 @@ export default function DecadeExperience() {
   }
   function cancelGesture(pointerId?: number) {
     const held = lease.current;
-    if (!held || (pointerId !== undefined && pointerId !== held.pointerId))
+    if (!held) {
+      setBackCard(null);
       return;
+    }
+    if (pointerId !== undefined && pointerId !== held.pointerId) return;
     releaseLease();
     setGhost(null);
+    setBackCard(null);
     setLift(0);
     if (held.kind === "card") suppressCardClick.current = true;
     dispatch({
@@ -353,8 +376,8 @@ export default function DecadeExperience() {
   cancelRef.current = cancelGesture;
   useEffect(() => {
     const escape = (event: globalThis.KeyboardEvent) => {
-      if (event.key === "Escape" && lease.current) {
-        event.preventDefault();
+      if (event.key === "Escape") {
+        if (lease.current) event.preventDefault();
         cancelRef.current();
       }
     };
@@ -546,10 +569,12 @@ export default function DecadeExperience() {
       }
       const valid = validDrop({ x: held.x, y: held.y }, aligned, slot);
       dispatch({ type: "CARD_DROP", valid });
-      if (!valid)
+      if (!valid) {
+        setBackCard(null);
         setNotice(
           "Card returned. Drag downward into the reader groove, or tap a card.",
         );
+      }
     } else {
       const committed = held.y - event.clientY >= held.travel * SNAP_THRESHOLD;
       dispatch({ type: "EJECT_RELEASE", committed });
@@ -579,6 +604,8 @@ export default function DecadeExperience() {
   function insertKey(cardId: ProjectId) {
     if (!lease.current) {
       setNotice("");
+      setEntering(false);
+      setBackCard(cardId);
       if (modelRef.current.state === "idle") {
         setQueuedCard(cardId);
         dispatch({ type: "HANDLE_KEY" });
@@ -743,6 +770,8 @@ export default function DecadeExperience() {
                   className={
                     "project-card" +
                     (model.cardId === project.id ? " is-in-driver" : "") +
+                    (backCard === project.id || queuedCard === project.id || model.cardId === project.id ? " is-face-down" : "") +
+                    (model.state === "inserting" && model.cardId === project.id ? " is-flipping-to-reader" : "") +
                     (ghost?.cardId === project.id ? " is-held" : "")
                   }
                   style={
@@ -766,7 +795,14 @@ export default function DecadeExperience() {
                   }
                   onPointerDown={(event) => {
                     suppressCardClick.current = false;
+                    if (event.button === 0 && event.isPrimary !== false && (model.state === "idle" || model.state === "open")) {
+                      setEntering(false);
+                      setBackCard(project.id);
+                    }
                     startCard(event, project.id);
+                  }}
+                  onPointerLeave={() => {
+                    if (!lease.current && model.state === "idle") setBackCard(null);
                   }}
                   {...pointerHandlers}
                   onClick={(event) => {
@@ -780,7 +816,7 @@ export default function DecadeExperience() {
                   <GlareHover
                     enabled={!reduced && model.cardId !== project.id && !ghost}
                   >
-                    <CardFace project={project} />
+                    <FlippingCard project={project} />
                   </GlareHover>
                 </button>
               </div>
@@ -931,7 +967,7 @@ export default function DecadeExperience() {
       )}
       {ghost && (
         <div
-          className="drag-card project-card"
+          className="drag-card project-card is-face-down"
           style={
             {
               left: ghost.x,
@@ -944,8 +980,7 @@ export default function DecadeExperience() {
           }
           aria-hidden="true"
         >
-          <CardFace
-            readerSide={ghost.aligned}
+          <FlippingCard
             project={driverProjects.find(
               (project) => project.id === ghost.cardId,
             )!}

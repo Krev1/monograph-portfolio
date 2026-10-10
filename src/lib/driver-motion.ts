@@ -27,21 +27,20 @@ export function useDriverMotion({
     () => {
       if (!scope.current || !entering || reduced) return;
       const cards = scope.current.querySelectorAll(
-        ".project-card-entry .card-artwork",
+        ".project-card-entry",
       );
       const hardware = scope.current.querySelector(".driver-arrival");
       const timeline = gsap.timeline();
       timeline.fromTo(
         cards,
-        { opacity: 0.08, filter: "blur(6px)", clipPath: "inset(0 0 100% 0)" },
+        { opacity: 0.08, y: 18 },
         {
           opacity: 1,
-          filter: "blur(0px)",
-          clipPath: "inset(0 0 0 0)",
+          y: 0,
           duration: 0.65,
           stagger: 0.14,
           ease: "power3.out",
-          clearProps: "opacity,filter,clipPath",
+          clearProps: "opacity,transform",
         },
         0.08,
       );
