@@ -12,17 +12,15 @@ import {
   SNAP_THRESHOLD,
   validDrop,
 } from "@/lib/driver-geometry";
-import {
-  henshinFrame,
-  HENSHIN_DURATION,
-  CARD_INSERT_DURATION,
-} from "@/lib/driver-timeline";
+import { HENSHIN_DURATION, CARD_INSERT_DURATION } from "@/lib/driver-timeline";
 import DecadriverModel from "./decadriver-model";
 import ProjectStage from "./project-stage";
 import { CardArtwork } from "./card-artwork";
 import { DRIVER_DIMENSIONS } from "@/lib/driver-dimensions";
 import { DriverAudio } from "@/lib/driver-audio";
 import type { DriverSound } from "@/lib/driver-sound-score";
+import { useDriverMotion } from "@/lib/driver-motion";
+import GlareHover from "./react-bits/GlareHover";
 
 type Lease = { pointerId: number; target: HTMLButtonElement } & (
   | {
@@ -88,7 +86,6 @@ export default function DecadeExperience() {
   const [model, dispatch] = useReducer(driverReducer, initialDriver);
   const [ghost, setGhost] = useState<Ghost | null>(null);
   const [lift, setLift] = useState(0);
-  const [elapsed, setElapsed] = useState(0);
   const [abilityId, setAbilityId] = useState<string | null>(null);
   const [tapControls, setTapControls] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
@@ -130,7 +127,16 @@ export default function DecadeExperience() {
   const lease = useRef<Lease | null>(null);
   const modelRef = useRef(model);
   modelRef.current = model;
+  const scopeRef = useRef<HTMLElement>(null);
   const sceneRef = useRef<HTMLDivElement>(null);
+  useDriverMotion({
+    scope: scopeRef,
+    entering,
+    reduced,
+    state: model.state,
+    run: model.run,
+    openness: model.openness,
+  });
   const [sceneWidth, setSceneWidth] = useState<number | null>(null);
   const measuredWidth = useRef<number | null>(null);
   const slotRef = useRef<HTMLButtonElement>(null);
@@ -172,15 +178,12 @@ export default function DecadeExperience() {
     model.state,
   );
   const closingReady = model.state === "loaded" || model.state === "open";
-  const frame = henshinFrame(elapsed, reduced);
   const dock =
     model.state === "active"
       ? 1
       : model.state === "reopening"
         ? 1 - model.openness
-        : model.state === "transforming"
-          ? frame.dock
-          : 0;
+        : 0;
   function sound(type: DriverSound) {
     if (!soundEnabled) return;
     try {
@@ -227,10 +230,9 @@ export default function DecadeExperience() {
     };
   }, [soundEnabled, model.state]);
 
-  // A run token and deadline complement RAF; CSS animationend is never required.
+  // Rendering and optional audio cannot hold the guarded mechanical deadline.
   useEffect(() => {
     const transforming = model.state === "transforming";
-    if (!transforming) setElapsed(0);
     if (!transforming && !model.settling) return;
     const duration = reduced
       ? transforming
@@ -244,23 +246,13 @@ export default function DecadeExperience() {
             ? 280
             : 180;
     const start = performance.now();
-    let raf = 0,
-      done = false;
+    let done = false;
     const finish = () => {
       if (!done) {
         done = true;
-        cancelAnimationFrame(raf);
         dispatch({ type: "COMPLETE", run: model.run, state: model.state });
       }
     };
-    const tick = () => {
-      if (done) return;
-      const time = performance.now() - start;
-      if (transforming) setElapsed(Math.min(time, duration));
-      if (time >= duration) finish();
-      else if (transforming) raf = requestAnimationFrame(tick);
-    };
-    if (transforming) setElapsed(0);
     if (soundedRun.current !== model.run) {
       soundedRun.current = model.run;
       soundRef.current(
@@ -274,18 +266,17 @@ export default function DecadeExperience() {
       );
     }
     const timer = window.setTimeout(finish, duration);
-    if (transforming) raf = requestAnimationFrame(tick);
     const visible = () => {
-      if (document.visibilityState === "visible") {
-        cancelAnimationFrame(raf);
-        tick();
-      }
+      if (
+        document.visibilityState === "visible" &&
+        performance.now() - start >= duration
+      )
+        finish();
     };
     document.addEventListener("visibilitychange", visible);
     return () => {
       done = true;
       window.clearTimeout(timer);
-      cancelAnimationFrame(raf);
       document.removeEventListener("visibilitychange", visible);
     };
   }, [model.state, model.settling, model.run, reduced]);
@@ -621,8 +612,8 @@ export default function DecadeExperience() {
   const sceneStyle = {
     "--open": model.openness,
     "--dock": dock,
-    "--energy": model.state === "transforming" ? frame.energy : 0,
-    "--scan": model.state === "transforming" ? frame.scan : 0,
+    "--energy": 0,
+    "--scan": 0,
     "--card-pull": lift,
   } as CSSProperties;
   const cardScale =
@@ -651,6 +642,7 @@ export default function DecadeExperience() {
   };
   return (
     <main
+      ref={scopeRef}
       className={
         "experience state-" +
         model.state +
@@ -773,7 +765,11 @@ export default function DecadeExperience() {
                     insertKey(project.id);
                   }}
                 >
-                  <CardFace project={project} />
+                  <GlareHover
+                    enabled={!reduced && model.cardId !== project.id && !ghost}
+                  >
+                    <CardFace project={project} />
+                  </GlareHover>
                 </button>
               </div>
             ))}
@@ -783,6 +779,7 @@ export default function DecadeExperience() {
       {model.state === "active" && selected && (
         <ProjectStage
           project={selected}
+          reduced={reduced}
           abilityId={abilityId}
           headingRef={headingRef}
           onAbility={(id) => {
@@ -914,11 +911,7 @@ export default function DecadeExperience() {
         </div>
       </div>
       {model.state === "transforming" && (
-        <div
-          className="transformation-identity"
-          aria-hidden="true"
-          style={{ opacity: frame.identity }}
-        >
+        <div className="transformation-identity" aria-hidden="true">
           <span>PROJECT / {model.cardId}</span>
           <strong>HENSHIN</strong>
           <b>{selected?.title}</b>

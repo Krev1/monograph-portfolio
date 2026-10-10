@@ -225,41 +225,6 @@ figure {
   width: var(--project-card-width);
   height: var(--project-card-height);
 }
-.is-entering .project-card-entry {
-  animation: cardArrival 650ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  animation-delay: calc(80ms + var(--entry-order) * 140ms);
-}
-.is-entering .project-card-entry .card-artwork {
-  animation: cardScan 650ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  animation-delay: calc(80ms + var(--entry-order) * 140ms);
-}
-.is-entering .driver-arrival {
-  animation: driverArrival 850ms cubic-bezier(0.2, 0.7, 0.2, 1) 220ms both;
-}
-@keyframes cardArrival {
-  from {
-    opacity: 0;
-    filter: blur(8px);
-  }
-  to {
-    opacity: 1;
-    filter: blur(0);
-  }
-}
-@keyframes cardScan {
-  from { clip-path: inset(0 0 100% 0); }
-  to { clip-path: inset(0 0 0 0); }
-}
-@keyframes driverArrival {
-  from {
-    opacity: 0;
-    filter: blur(12px);
-  }
-  to {
-    opacity: 1;
-    filter: blur(0);
-  }
-}
 .project-card {
   position: relative;
   display: block;
@@ -652,13 +617,12 @@ figure {
 .project-stage {
   width: min(1200px, 90vw);
   margin: 30px auto 0;
-  animation: stageReveal 0.3s ease-out both;
   height: calc(100svh - 205px - var(--driver-dock-height) - 30px);
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: #7c4c76 #170c20;
-  padding: 0 8px 28px 0;
+  padding: 0 8px 0 0;
 }
 .experience.state-active {
   height: 100svh;
@@ -1312,4 +1276,15 @@ figure {
   .deck-caption {
     margin-bottom: 12px;
   }
+}
+
+.project-stage-content {
+  min-height: 100%;
+  padding-bottom: 28px;
+}
+.project-title-letters {
+  display: inline-block;
+}
+.transformation-identity {
+  opacity: 0;
 }

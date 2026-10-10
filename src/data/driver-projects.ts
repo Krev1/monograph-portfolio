@@ -213,7 +213,16 @@ export const driverProjects: PortfolioProject[] = [
       "Evidence-linked project and ability cards",
       "Typed transitions with cancellation and reduced-motion support",
     ],
-    technologies: ["Next.js", "React", "TypeScript", "SVG", "CSS"],
+    technologies: [
+      "Next.js",
+      "React",
+      "TypeScript",
+      "SVG",
+      "GSAP",
+      "Lenis",
+      "React Bits",
+      "CSS",
+    ],
     repositoryUrl: "https://github.com/Krev1/monograph-portfolio",
     visual: "system",
     mainCard: { code: "DESIGN / 03", accent: "#ff8dca", emblem: "monogram" },
@@ -275,12 +284,12 @@ export const driverProjects: PortfolioProject[] = [
         title: "MOTION DESIGN",
         kind: "SKILL",
         description:
-          "Lock, scan, recognition and docking share one bounded timeline with a reduced-motion equivalent.",
+          "GSAP coordinates arrival and transformation, adapted React Bits add card glare and text reveals, and Lenis smooths the project panel.",
         result:
-          "Project content is mounted only after transformation completes.",
+          "Mechanical deadlines remain independent of rendering; reduced motion and native card hit areas are preserved.",
         evidence: {
-          label: "Directed timeline",
-          url: "https://github.com/Krev1/monograph-portfolio/blob/feat/decade-driver-sdd/src/lib/driver-timeline.ts",
+          label: "Scoped animation rendering",
+          url: "https://github.com/Krev1/monograph-portfolio/blob/feat/decade-driver-sdd/src/lib/driver-motion.ts",
         },
       },
       {

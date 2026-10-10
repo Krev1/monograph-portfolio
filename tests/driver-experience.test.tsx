@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
+import { gsap } from "gsap";
 import DecadeExperience from "../src/components/decade-experience";
 import {
   CARD_INSERT_DURATION,
@@ -36,6 +37,40 @@ beforeEach(() => {
   );
 });
 describe("Controller integration", () => {
+  it("a paused animation renderer cannot delay project activation or leave the Driver undocked", async () => {
+    render(<DecadeExperience />);
+    const wasPaused = gsap.globalTimeline.paused();
+    gsap.globalTimeline.pause();
+    try {
+      fireEvent.click(card("LEARN"));
+      await advance(180);
+      await advance(CARD_INSERT_DURATION);
+      fireEvent.keyDown(left(), { key: "ArrowRight" });
+      await advance(180);
+      await advance(HENSHIN_DURATION - 1);
+      expect(state()).toBe("transforming");
+      expect(screen.queryByTestId("project-stage")).toBeNull();
+      await advance(1);
+      expect(state()).toBe("active");
+      expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
+        "LEARN",
+      );
+      expect(
+        screen.getByTestId("driver-scene").style.getPropertyValue("--dock"),
+      ).toBe("1");
+      expect(
+        screen.getByTestId("project-stage").getAttribute("data-scroll-engine"),
+      ).toBe("native");
+      fireEvent.keyDown(left(), { key: "ArrowLeft" });
+      await advance(180);
+      expect(state()).toBe("loaded");
+      expect(
+        screen.getByTestId("driver-scene").style.getPropertyValue("--dock"),
+      ).toBe("0");
+    } finally {
+      gsap.globalTimeline.paused(wasPaused);
+    }
+  });
   it.each(["SPENDWISE AI", "LEARN", "KREV1 PORTFOLIO"])(
     "choosing %s while closed opens before inserting, and never skips Henshin",
     async (name) => {
