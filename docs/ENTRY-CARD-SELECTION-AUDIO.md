@@ -1,0 +1,12 @@
+# Arrival, closed-driver card selection and reader sound
+
+User request: 2026-10-10, video https://www.youtube.com/watch?v=e-6vh4FWuOw and annotated screenshot.
+
+The video opened in the native browser as “Kamen Rider Decade All Henshin”, 10:45. Observed frames include a card entering a reader at 0:04, a transformation at 0:24, and the on-screen KAMENRIDE / KUUGA identification at 0:34. The browser tools provide video frames but no audio perception; transcript export reports none available. No listening or exact soundtrack-match claim is made. The score is original synthesis, using the observed card/identification sequence and the user's requested Decade style.
+
+- Remove pink rectangles around the physical insertion/extraction hit area and handle overlays. Preserve keyboard focus with a pale groove illumination and underlined handle instructions, rather than rectangular outlines. Preserve the existing card artwork colors and card-colored circular Henshin energy.
+- Enable initial deck cards while the Driver is closed. A click/Enter selects a card, opens the Driver, then inserts that card only after opening finishes. No physical card is inserted through a closed reader. Opening/inserting/loading remain exclusive guarded states; other cards cannot replace the occupied card.
+- On an open Driver, a stationary pointer tap inserts a card. Downward drag still uses the slot geometry. A cancelled/invalid/moved-and-returned drag must not turn into an insertion through its trailing click. Keyboard and assistive activation remain supported.
+- Cards enter in a staggered scan reveal; the Driver materializes after them. Entrance only runs on page mount, never on deck remount/reopening. It changes opacity/filter/clip rather than dimensions or pointer geometry, never gates input, stops on interaction, and respects reduced-motion mode.
+- Give the reader announcement 900ms of physical insertion. Give Henshin a 2400ms directed timeline with project announcement first, then barcode-like stabs and a metallic resolution. Keep timing independent of optional audio loading/playback. Stock synthesized project speech receives brief repeated leading syllables, band-limiting and metallic treatment; no soundtrack is extracted or actor voice cloned.
+- Verify initial click → opening → insertion → loaded → Henshin/project; open tap; invalid/cancelled drag trailing click; reopen/extract; empty close; sound opt-in/mute and finite PCM; desktop/mobile arrival and absence of pink hit-area rectangles.
