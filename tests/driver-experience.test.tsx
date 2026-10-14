@@ -37,7 +37,92 @@ beforeEach(() => {
   );
 });
 describe("Controller integration", () => {
-  it("reveals two-sided cards once and stops the arrival flip when a card is held", async () => {
+  it("keeps a visible card flight between the deck and reader without extending insertion", async () => {
+    render(<DecadeExperience />);
+    await open();
+    vi.spyOn(card(), "getBoundingClientRect").mockReturnValue({ left: 100, top: 200, right: 218, bottom: 372, width: 118, height: 172 } as DOMRect);
+    vi.spyOn(screen.getByRole("button", { name: "Project card insertion slot" }), "getBoundingClientRect").mockReturnValue({ left: 450, top: 450, right: 550, bottom: 550, width: 100, height: 100 } as DOMRect);
+    fireEvent.click(card());
+    expect(state()).toBe("inserting");
+    expect(screen.getByTestId("card-handoff")).not.toBeNull();
+    expect(document.querySelector("main")!.style.getPropertyValue("--card-feed-delay")).toBe("480ms");
+    await advance(479);
+    expect(screen.getByTestId("card-handoff")).not.toBeNull();
+    await advance(1);
+    expect(screen.queryByTestId("card-handoff")).toBeNull();
+    await advance(CARD_INSERT_DURATION - 480);
+    expect(state()).toBe("loaded");
+    expect(screen.queryByTestId("reader-logo-light")).not.toBeNull();
+    expect(screen.getByTestId("status-jewel").querySelector("circle")!.getAttribute("cy")).toBe("105");
+  });
+    it("lets the held card slide under the housing without restarting its travel on release", async () => {
+    render(<DecadeExperience />);
+    await open();
+    vi.spyOn(card(), "getBoundingClientRect").mockReturnValue({ left: 100, top: 200, right: 218, bottom: 372, width: 118, height: 172 } as DOMRect);
+    vi.spyOn(screen.getByRole("button", { name: "Project card insertion slot" }), "getBoundingClientRect").mockReturnValue({ left: 450, top: 450, right: 550, bottom: 550, width: 100, height: 100 } as DOMRect);
+    fireEvent.pointerDown(card(), { pointerId: 1, clientX: 159, clientY: 280 });
+      fireEvent.pointerMove(card(), { pointerId: 1, clientX: 500, clientY: 480 });
+      expect(state()).toBe("cardDragging");
+      expect(screen.getByTestId("drag-card").classList.contains("is-feeding")).toBe(true);
+      const entryCard = screen.getByTestId("transient-card");
+      expect(entryCard.getAttribute("clip-path")).toBeNull();
+      expect(screen.getByTestId("reader-outer-rim").compareDocumentPosition(entryCard) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(screen.getByTestId("reader-front-shell").compareDocumentPosition(entryCard) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+      expect(screen.getByTestId("reader-card-window").compareDocumentPosition(entryCard) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+      const pull = Number(screen.getByTestId("driver-scene").style.getPropertyValue("--card-pull"));
+      expect(pull).toBeGreaterThan(0);
+      fireEvent.pointerMove(card(), { pointerId: 1, clientX: 500, clientY: 550 });
+      expect(Number(screen.getByTestId("driver-scene").style.getPropertyValue("--card-pull"))).toBeLessThan(pull);
+      fireEvent.pointerMove(card(), { pointerId: 1, clientX: 500, clientY: 545 });
+      expect(state()).toBe("cardDragging");
+      fireEvent.pointerUp(card(), { pointerId: 1, clientX: 500, clientY: 545 });
+      expect(state()).toBe("inserting");
+      expect(screen.queryByTestId("card-handoff")).toBeNull();
+      expect(document.querySelector("main")!.style.getPropertyValue("--card-feed-delay")).toBe("0ms");
+      expect(document.querySelector("main")!.style.getPropertyValue("--card-entry-travel")).toBe("0px");
+    await advance(CARD_INSERT_DURATION);
+    expect(state()).toBe("loaded");
+  });
+    it("pulls the remaining card in only after at least 20% has entered", async () => {
+      render(<DecadeExperience />);
+      await open();
+      vi.spyOn(card(), "getBoundingClientRect").mockReturnValue({ left: 100, top: 200, right: 218, bottom: 372, width: 118, height: 172 } as DOMRect);
+      vi.spyOn(screen.getByRole("button", { name: "Project card insertion slot" }), "getBoundingClientRect").mockReturnValue({ left: 450, top: 450, right: 550, bottom: 470, width: 100, height: 20 } as DOMRect);
+      fireEvent.pointerDown(card(), { pointerId: 1, clientX: 159, clientY: 280 });
+      fireEvent.pointerMove(card(), { pointerId: 1, clientX: 500, clientY: 392 });
+      fireEvent.pointerUp(card(), { pointerId: 1, clientX: 500, clientY: 392 });
+      expect(state()).toBe("open");
+      fireEvent.pointerDown(card(), { pointerId: 2, clientX: 159, clientY: 280 });
+      fireEvent.pointerMove(card(), { pointerId: 2, clientX: 500, clientY: 393 });
+      const remaining = Number(screen.getByTestId("driver-scene").style.getPropertyValue("--card-pull")) * 344;
+      fireEvent.pointerMove(card(), { pointerId: 2, clientX: 580, clientY: 393 });
+      expect(screen.getByTestId("drag-card").classList.contains("is-feeding")).toBe(true);
+      expect(Number(screen.getByTestId("driver-scene").style.getPropertyValue("--card-pull")) * 344).toBeCloseTo(remaining);
+      fireEvent.pointerUp(card(), { pointerId: 2, clientX: 580, clientY: 393 });
+      expect(state()).toBe("inserting");
+      expect(parseFloat(document.querySelector("main")!.style.getPropertyValue("--card-entry-travel"))).toBeCloseTo(remaining);
+      expect(remaining).toBeGreaterThan(0);
+      expect(screen.queryByTestId("card-handoff")).toBeNull();
+      await advance(CARD_INSERT_DURATION);
+      expect(state()).toBe("loaded");
+    });
+      it("tracks without repeated slot measurement and rejects a tip-only drop", async () => {
+      render(<DecadeExperience />);
+      await open();
+      vi.spyOn(card(), "getBoundingClientRect").mockReturnValue({ left: 100, top: 200, right: 218, bottom: 372, width: 118, height: 172 } as DOMRect);
+      const measure = vi.spyOn(screen.getByRole("button", { name: "Project card insertion slot" }), "getBoundingClientRect").mockReturnValue({ left: 450, top: 450, right: 550, bottom: 470, width: 100, height: 20 } as DOMRect);
+      fireEvent.pointerDown(card(), { pointerId: 1, clientX: 159, clientY: 280 });
+      const floating = screen.getByTestId("drag-card");
+      for (let x = 170; x <= 200; x += 10) fireEvent.pointerMove(card(), { pointerId: 1, clientX: x, clientY: 290 });
+      expect(floating.style.getPropertyValue("--ghost-x")).toBe("200px");
+      expect(floating.style.getPropertyValue("--ghost-y")).toBe("382px");
+      expect(measure).toHaveBeenCalledOnce();
+      fireEvent.pointerMove(card(), { pointerId: 1, clientX: 500, clientY: 358 });
+        fireEvent.pointerUp(card(), { pointerId: 1, clientX: 500, clientY: 358 });
+        expect(state()).toBe("open");
+        expect(screen.queryByTestId("transient-card")).toBeNull();
+    });
+    it("reveals two-sided cards once and stops the arrival flip when a card is held", async () => {
     render(<DecadeExperience />);
     expect(document.querySelector("main")!.classList.contains("is-entering")).toBe(true);
     expect(card().querySelector(".card-flip-front [data-card-side=front]")).not.toBeNull();
@@ -336,7 +421,7 @@ describe("Controller integration", () => {
       clientX: 100,
       clientY: 200,
     });
-    fireEvent.pointerUp(project, { pointerId: 1, clientX: 450, clientY: 470 });
+    fireEvent.pointerUp(project, { pointerId: 1, clientX: 450, clientY: 730 });
     expect(state()).toBe("inserting");
     await advance(CARD_INSERT_DURATION);
     expect(state()).toBe("loaded");
@@ -695,8 +780,8 @@ describe("Physical card scale", () => {
       clientY: 245,
     });
     const ghost = document.querySelector<HTMLDivElement>(".drag-card")!;
-    expect(ghost.style.left).toBe("159px");
-    expect(ghost.style.top).toBe("372px");
+    expect(ghost.style.getPropertyValue("--ghost-x")).toBe("159px");
+    expect(ghost.style.getPropertyValue("--ghost-y")).toBe("372px");
     expect(ghost.querySelector("svg")!.getAttribute("viewBox")).toBe(
       "0 0 118 172",
     );

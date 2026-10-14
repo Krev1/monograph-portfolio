@@ -263,6 +263,7 @@ figure {
 }
 .project-card.is-held {
   opacity: 0;
+  visibility: hidden;
 }
 .card-flip-arrival,
 .card-flip {
@@ -289,14 +290,14 @@ figure {
 }
 .drag-card .card-flip { animation: cardHeldFlip 280ms ease-out both; }
 .project-card.is-flipping-to-reader {
-  animation: cardDeckHandoff var(--card-insert-duration) linear both;
+  animation: none;
 }
 @keyframes cardArrivalFlip {
   from { transform: rotateY(180deg) rotateZ(-5deg); }
   to { transform: rotateY(0deg) rotateZ(0deg); }
 }
 @keyframes cardHeldFlip {
-  from { transform: rotateY(0deg); }
+  from { transform: rotateY(var(--flight-flip-from, 0deg)); }
   to { transform: rotateY(180deg); }
 }
 @keyframes cardDeckHandoff {
@@ -405,7 +406,7 @@ figure {
   z-index: 5;
   top: 51.3%;
   width: 20%;
-  height: 48%;
+  height: 76%;
   min-width: 44px;
   min-height: 44px;
   border: 1px solid transparent;
@@ -433,7 +434,14 @@ figure {
   color: #dfc8e4;
 }
 .handle:hover:not(:disabled) {
-  background: #ffffff08;
+  background: transparent;
+}
+.handle:hover:not(:disabled) span {
+  color: #fff;
+}
+.driver-hardware:has(.handle-left:hover:not(:disabled)) .dx-mechanical-left,
+.driver-hardware:has(.handle-right:hover:not(:disabled)) .dx-mechanical-right {
+  filter: brightness(1.12);
 }
 .handle:focus-visible {
   outline: none;
@@ -499,7 +507,8 @@ figure {
   pointer-events: none;
 }
 .dx-card-inserting .dx-card-motion {
-  animation: cardInsert var(--card-insert-duration) ease-out both;
+  animation: cardInsert var(--card-feed-duration, 900ms) cubic-bezier(.22,.7,.3,1) forwards;
+  animation-delay: var(--card-feed-delay, 0ms);
 }
 .dx-card-ejecting .dx-card-motion {
   animation: cardEject 0.28s ease-in both;
@@ -508,11 +517,22 @@ figure {
   position: fixed;
   z-index: 60;
   pointer-events: none;
-  transform: translate(-50%, -100%) rotate(var(--tilt));
+  transform: translate3d(var(--ghost-x), var(--ghost-y), 0) translate(-50%, -100%) rotate(var(--tilt));
   width: var(--project-card-width);
   height: var(--project-card-height);
   transition: none;
+  will-change: transform;
 }
+.drag-card.is-handoff {
+  animation: cardFlight var(--flight-duration) cubic-bezier(.25,.65,.3,1) both;
+}
+.drag-card.is-feeding { visibility: hidden; }
+.drag-card.is-handoff .card-flip { animation: cardHeldFlip var(--flight-duration) ease-out both; }
+@keyframes cardFlight {
+  from { transform: translate3d(var(--ghost-x), var(--ghost-y), 0) translate(-50%, -100%) rotate(var(--tilt)); }
+  to { transform: translate3d(calc(var(--ghost-x) + var(--flight-x)), calc(var(--ghost-y) + var(--flight-y)), 0) translate(-50%, -100%) rotate(0deg); }
+}
+.dx-card-inserting .dx-card-motion { visibility: hidden; }
 .drag-card:after {
   opacity: 0.9;
 }
@@ -914,12 +934,13 @@ figure {
   margin-top: 9px;
 }
 @keyframes cardInsert {
-  0%, 31% {
-    opacity: 0;
+  from {
+    visibility: visible;
+    opacity: 1;
     transform: translateX(calc(var(--card-entry-travel) * -1));
   }
-  32% { opacity: 1; transform: translateX(calc(var(--card-entry-travel) * -1)); }
   to {
+    visibility: visible;
     opacity: 1;
     transform: translateX(0);
   }
@@ -1332,4 +1353,433 @@ figure {
 }
 .transformation-identity {
   opacity: 0;
+}
+
+/* Studio layout: the cards and reader share their physical scale. */
+.experience {
+  --driver-width: min(660px, 94vw, max(300px, calc((92svh - 450px) / .83)));
+  background: radial-gradient(ellipse at 50% 65%, #211021 0, transparent 58%), #09090d;
+}
+.experience:before {
+  background-image: linear-gradient(#ffffff03 1px, transparent 1px), linear-gradient(90deg, #ffffff03 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: linear-gradient(transparent, #000 55%, transparent);
+}
+.experience:after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 45vw;
+  height: 1px;
+  left: 27.5%;
+  bottom: 13%;
+  background: linear-gradient(90deg, transparent, #f78abc35, transparent);
+  pointer-events: none;
+}
+.experience-header { height: 68px; border-color: #ffffff0d; padding: 0 5vw; }
+.wordmark { font-size: 27px; }
+.header-label { font-size: 9px; color: #b3a9b5; letter-spacing: 2.5px; }
+.header-actions { gap: 18px; }
+.header-actions button { border: 1px solid #ffffff13; border-radius: 30px; padding: 0 15px; min-height: 34px; font-size: 9px; background: #ffffff03; transition: background .2s, border-color .2s; }
+.header-actions button:hover { background: #ffffff09; border-color: #ffffff35; }
+.header-actions button[aria-pressed=true] { border-color: #ff8dca50; color: #ffadd8; }
+.experience-intro { position: relative; text-align: center; margin: 27px auto 20px; width: min(880px, 90vw); }
+.intro-kicker { font-size: 8px; letter-spacing: 2.1px; color: #b3a9b5; display: flex; gap: 8px; align-items: center; justify-content: center; }
+.intro-kicker > span { width: 5px; height: 5px; background: #b8e7b9; border-radius: 50%; box-shadow: 0 0 8px #b8e7b940; }
+.experience-intro h1 { font-size: clamp(30px, 4.5vw, 58px); font-weight: 700; line-height: 1.05; letter-spacing: -2px; margin-top: 13px; }
+.experience-intro h1 span { color: #b0a5b3; font-weight: 400; }
+.experience-intro h1 > svg { width: 30px; height: 30px; color: #ff8dca; margin-left: 10px; stroke-width: 1.2; }
+.intro-break { display: none; }
+.experience-intro p { color: #9f95a6; font-size: 12px; line-height: 1.7; margin-top: 10px; }
+.intro-signature { display: none; }
+.system-line { padding: 12px 5vw; font-size: 8px; color: #8d8297; border-top: 1px solid #ffffff07; border-bottom: 1px solid #ffffff07; background: #ffffff02; }
+.driver-journey { display: flex; justify-content: center; gap: 20px; list-style: none; margin: 0 auto; padding: 0; }
+.driver-journey li { display: flex; gap: 7px; align-items: center; color: #77717e; font-size: 9px; letter-spacing: .3px; transition: color .2s; }
+.journey-icon { width: 25px; height: 25px; border: 1px solid #ffffff14; display: grid; place-items: center; border-radius: 50%; }
+.driver-journey small { display: none; }
+.driver-journey .is-current { color: #fcecf4; }
+.is-current .journey-icon { background: #ff8dca15; color: #ff8dca; border-color: #ff8dca65; box-shadow: 0 0 16px #ff8dca0b; }
+.driver-journey .is-complete { color: #b6a8bd; }
+.is-complete .journey-icon { border-color: #ffffff20; color: #c7e1c4; }
+.instruction { margin: 17px 20px 0; min-height: 48px; }
+.instruction strong { font-size: 10px; letter-spacing: 1.4px; }
+.instruction p { font-size: 11px; margin-top: 6px; color: #b7aabd; }
+.instruction-dot { background: #ffa9d4; box-shadow: 0 0 10px #ff8dca40; width: 4px; height: 4px; }
+.project-deck { margin-top: 19px; width: min(660px, 90vw); }
+.spotlight-surface { position: relative; isolation: isolate; }
+.spotlight-surface:before { content: ""; position: absolute; left: var(--spotlight-x, 50%); top: var(--spotlight-y, 50%); width: 320px; height: 320px; transform: translate(-50%, -50%); border-radius: 50%; z-index: -1; opacity: 0; background: radial-gradient(circle, #ff91cc12 0%, #ff91cc06 35%, transparent 70%); transition: opacity .35s; pointer-events: none; }
+.spotlight-surface:hover:before { opacity: 1; }
+.deck-caption { font-size: 7px; color: #a598ac; letter-spacing: 1.7px; margin-bottom: 13px; }
+.project-card-row { gap: clamp(12px, 2vw, 24px); }
+.project-card-entry { position: relative; }
+.project-card:hover:not(:disabled) { filter: drop-shadow(0 12px 24px color-mix(in srgb, var(--card-accent) 18%, transparent)); transform: translateY(-5px); }
+.project-card:focus-visible { outline: 1px solid #ffb8dd; outline-offset: 8px; border-radius: 5px; }
+.card-caption { position: absolute; top: calc(100% + 12px); left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; font-size: 6px; letter-spacing: .8px; color: #b5a3bb; pointer-events: none; }
+.card-caption > span:first-child { color: #6e6277; }
+.reader-hint { display: flex; gap: 8px; justify-content: center; align-items: center; margin-top: 37px; font-size: 9px; color: #baabbe; }
+.hint-mouse { width: 17px; height: 22px; border: 1px solid #ffffff30; border-radius: 8px; display: grid; place-items: center; color: #ffb6d7; }
+.reader-hint i { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: #6d5d78; margin: 0 8px 2px; }
+.driver-caption { color: #a99cad; font-size: 7px; letter-spacing: 1.6px; margin-bottom: 14px; }
+.driver-caption > span:last-child { color: #cbbdd0; }
+.driver-scene { bottom: calc(max(80px, 7svh) * (1 - var(--dock))); }
+.device-help { font-size: 7px; letter-spacing: 1.8px; color: #8e7d9b; }
+.controls-toggle { border: 1px solid #ffffff15; border-radius: 24px; background: #101016; padding: 9px 15px; color: #cabdd0; font-size: 8px; }
+.experience-footer { font-size: 7px; letter-spacing: 1.1px; color: #85788c; }
+.reduced-motion .spotlight-surface:before { display: none; }
+.driver-hardware:before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 12%; right: 12%; top: 35%; bottom: -6%;
+  background: radial-gradient(ellipse at center, #a8b6d10b, transparent 70%);
+  pointer-events: none;
+}
+.project-card-row .project-card { filter: drop-shadow(0 14px 14px #0009); }
+.project-card-row .project-card:hover:not(:disabled) { filter: drop-shadow(0 14px 20px color-mix(in srgb, var(--card-accent) 22%, #000)); }
+.project-card-row .project-card.is-in-driver { filter: grayscale(.35) saturate(.55) blur(.45px); }
+@media (min-width: 1100px) and (min-height: 660px) {
+  .experience { --driver-width: min(520px, 43vw, calc((100svh - 400px) / .83)); }
+  .experience-intro { position: absolute; top: 180px; left: 5vw; text-align: left; width: 40%; margin: 0; }
+  .system-line { margin-top: 24px; }
+  .intro-kicker { justify-content: flex-start; }
+  .intro-break { display: block; }
+  .experience-intro h1 { font-size: clamp(44px, 4.5vw, 64px); line-height: 1; }
+  .intro-signature { position: static; margin-top: 35px; display: flex; align-items: center; gap: 12px; color: #ddcbdc; width: 190px; font-size: 11px; letter-spacing: 2px; }
+  .intro-signature b { display: block; margin-top: 7px; color: #8f809a; font-size: 7px; font-weight: 400; letter-spacing: 1.6px; white-space: nowrap; }
+  .instruction { width: 42%; margin-left: 52vw; margin-top: 22px; }
+  .project-deck { width: 42%; margin: 20px 0 0 52vw; }
+  .driver-scene { left: 73%; bottom: calc(5svh * (1 - var(--dock))); }
+  .state-active .driver-scene, .state-transforming .driver-scene, .state-reopening .driver-scene { left: 50%; bottom: calc(7svh * (1 - var(--dock))); }
+  .state-active .instruction, .state-transforming .instruction, .state-reopening .instruction { width: auto; margin-left: 20px; }
+  .reader-hint { margin-top: 40px; }
+}
+@media (max-width: 820px) {
+  .system-line > span { display: none; }
+  .driver-journey { gap: 19px; }
+  .experience-intro h1 { font-size: 39px; }
+}
+@media (max-width: 540px) {
+  .experience { --driver-width: min(94vw, max(285px, calc((92svh - 380px) / .83))); }
+  .experience-header { height: 60px; gap: 10px; }
+  .header-actions { gap: 12px; font-size: 8px; }
+  .header-actions button { padding: 0 11px; font-size: 8px; }
+  .experience-intro { margin: 22px auto 18px; }
+  .intro-kicker { font-size: 6px; letter-spacing: 1.5px; }
+  .experience-intro h1 { font-size: 32px; letter-spacing: -1.5px; }
+  .experience-intro h1 > svg { display: none; }
+  .experience-intro p { font-size: 10px; margin-top: 8px; }
+  .driver-journey { gap: 13px; }
+  .driver-journey li { flex-direction: column; gap: 5px; font-size: 8px; }
+  .system-line { padding: 9px 12px; }
+  .instruction { margin-top: 15px; min-height: 42px; }
+  .instruction p { font-size: 10px; }
+  .instruction strong { font-size: 9px; letter-spacing: 1px; }
+  .project-deck { margin-top: 16px; }
+  .project-card-row { gap: 15px; }
+  .card-caption { font-size: 5px; letter-spacing: .2px; }
+  .reader-hint { margin-top: 32px; font-size: 8px; }
+  .deck-caption { font-size: 6px; }
+  .driver-caption { margin-bottom: 10px; }
+  .driver-scene { bottom: calc(90px * (1 - var(--dock))); }
+  .input-controls { bottom: 32px; }
+}
+@media (max-height: 700px) {
+  .experience { min-height: max(100svh, 760px); }
+  .experience-intro { margin-top: 19px; }
+  .driver-scene { position: absolute; top: calc(340px + var(--project-card-height)); bottom: auto; }
+  .state-active .driver-scene, .state-transforming .driver-scene, .state-reopening .driver-scene { position: fixed; top: auto; bottom: 0; }
+  .input-controls { position: absolute; bottom: 30px; }
+}
+
+/* Proportional workspace: reserve space in the page for the physical reader. */
+.experience {
+  --driver-width: min(640px, 92vw);
+}
+.experience:not(:is(.state-active, .state-transforming, .state-reopening)) {
+  min-height: 100svh;
+  padding-bottom: 24px;
+}
+.experience:not(:is(.state-active, .state-transforming, .state-reopening)) .driver-scene {
+  position: relative;
+  left: auto;
+  top: auto;
+  bottom: auto;
+  margin: 30px auto 0;
+  transform: none;
+}
+.experience:not(:is(.state-active, .state-transforming, .state-reopening)) .input-controls {
+  position: relative;
+  left: auto;
+  bottom: auto;
+  transform: none;
+  margin: 36px auto 0;
+  width: fit-content;
+}
+.experience:not(:is(.state-active, .state-transforming, .state-reopening)) .experience-footer {
+  position: relative;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  margin: 30px 5vw 0;
+}
+.project-deck { width: min(640px, 92vw); }
+.project-card-row { gap: clamp(12px, 2vw, 24px); }
+.experience-intro { margin: 24px auto 18px; }
+.experience-intro h1 { font-size: clamp(32px, 4vw, 52px); }
+.deck-caption { font-size: 8px; letter-spacing: 1.3px; }
+.card-caption { font-size: 7px; letter-spacing: .5px; }
+.reader-hint { margin-top: 34px; font-size: 10px; }
+.driver-caption { font-size: 8px; letter-spacing: 1.3px; }
+.device-help { margin-top: 24px; font-size: 8px; letter-spacing: 1.3px; }
+@media (min-width: 1100px) and (min-height: 660px) {
+  .experience { --driver-width: min(620px, 46vw); }
+  .experience-intro {
+    width: 34%;
+    top: clamp(185px, 25svh, 310px);
+    margin: 0;
+  }
+  .experience-intro h1 { font-size: clamp(44px, 4.2vw, 66px); line-height: 1.08; }
+  .experience-intro p { max-width: 340px; font-size: 13px; line-height: 1.8; }
+  .instruction { width: 46%; margin-left: 49vw; margin-top: 22px; }
+  .project-deck { width: 46%; margin: 18px 0 0 49vw; }
+  .experience:not(:is(.state-active, .state-transforming, .state-reopening)) .driver-scene {
+    margin-left: calc(72vw - var(--driver-width) / 2);
+    margin-right: 0;
+    margin-top: 28px;
+  }
+  .experience:not(:is(.state-active, .state-transforming, .state-reopening)) .input-controls {
+    margin-left: 72vw;
+    transform: translateX(-50%);
+  }
+}
+@media (max-width: 540px) {
+  .experience { --driver-width: 92vw; }
+  .experience-intro { margin: 20px auto 16px; }
+  .experience-intro h1 { font-size: clamp(28px, 8.2vw, 36px); }
+  .project-deck { margin-top: 16px; }
+  .project-card-row { gap: 12px; }
+  .deck-caption { font-size: 6px; letter-spacing: 1px; }
+  .card-caption { font-size: 6px; letter-spacing: .1px; }
+  .reader-hint { font-size: 8px; margin-top: 30px; }
+  .driver-caption { font-size: 6px; letter-spacing: .8px; }
+  .device-help { font-size: 6px; letter-spacing: 1px; }
+  .experience:not(:is(.state-active, .state-transforming, .state-reopening)) .driver-scene { margin-top: 28px; }
+  .experience:not(:is(.state-active, .state-transforming, .state-reopening)) .input-controls { margin-top: 32px; }
+  .experience:not(:is(.state-active, .state-transforming, .state-reopening)) .experience-footer { margin-top: 28px; }
+}
+@media (max-height: 659px) and (min-width: 541px) {
+  .experience { --driver-width: min(520px, 82vw); }
+  .experience-intro { position: relative; top: auto; left: auto; width: 90vw; text-align: center; }
+  .intro-break { display: none; }
+  .intro-signature { display: none; }
+  .intro-kicker { justify-content: center; }
+}
+
+/* Click flight lifts the card, flips it, and aligns its tip with the reader. */
+.drag-card.is-handoff.from-deck {
+  animation: cardClickFlight var(--flight-duration) cubic-bezier(.22,.61,.36,1) both;
+  filter: drop-shadow(0 14px 18px #0009) drop-shadow(0 0 8px var(--driver-accent));
+}
+@keyframes cardClickFlight {
+  0% { transform: translate3d(var(--ghost-x), var(--ghost-y), 0) translate(-50%, -100%) rotate(var(--tilt)); }
+  42% { transform: translate3d(calc(var(--ghost-x) + var(--flight-x) * .42), calc(var(--ghost-y) + var(--flight-y) * .42 - 30px), 0) translate(-50%, -100%) rotate(-7deg) scale(1.04); }
+  100% { transform: translate3d(calc(var(--ghost-x) + var(--flight-x)), calc(var(--ghost-y) + var(--flight-y)), 0) translate(-50%, -100%) rotate(0deg); }
+}
+.dx-reader-logo-light {
+  animation: readerLogoIgnition 700ms ease-out, readerLogoHeartbeat 1800ms 700ms ease-in-out infinite;
+}
+@keyframes readerLogoIgnition {
+  0% { filter: brightness(1) drop-shadow(0 0 0 var(--driver-accent)); }
+  26% { filter: brightness(2.5) drop-shadow(0 0 9px var(--driver-accent)) drop-shadow(0 0 18px var(--driver-accent)); }
+  100% { filter: brightness(1.12) drop-shadow(0 0 3px var(--driver-accent)); }
+}
+@keyframes readerLogoHeartbeat {
+  0%, 40%, 100% { filter: brightness(1.12) drop-shadow(0 0 3px var(--driver-accent)); }
+  12%, 27% { filter: brightness(1.8) drop-shadow(0 0 8px var(--driver-accent)); }
+  19%, 34% { filter: brightness(1.2) drop-shadow(0 0 4px var(--driver-accent)); }
+}
+.dx-metal-sheen {
+  transform-origin: 500px 257px;
+  animation: metalRingSheen 18s linear infinite;
+  pointer-events: none;
+}
+@keyframes metalRingSheen { to { transform: rotate(360deg); } }
+.reduced-motion .dx-reader-logo-light,
+.reduced-motion .dx-metal-sheen { animation: none; }
+.reduced-motion .dx-reader-logo-light { filter: brightness(1.2) drop-shadow(0 0 3px var(--driver-accent)); }
+
+/* The light is drawn directly in the lens so its animation is independent of SVG use clones. */
+.dx-reader-logo-light { filter: brightness(1.5) drop-shadow(0 0 5px var(--driver-accent)); }
+.dx-reader-logo-halo { opacity: .18; mix-blend-mode: screen; }
+.drag-card,
+.drag-card.is-handoff.from-deck {
+  filter: drop-shadow(0 12px 18px #0009) drop-shadow(0 0 7px var(--card-accent)) drop-shadow(0 0 15px var(--card-accent));
+}
+.dx-transient-card .dx-card-motion,
+.dx-reader-window .dx-card-inserting .dx-card-motion,
+.dx-reader-window .dx-card-pulling .dx-card-motion {
+  filter: drop-shadow(0 0 5px var(--driver-accent)) drop-shadow(0 0 12px var(--driver-accent));
+}
+
+
+/* Centered desktop demo: a compact card deck and reader on one axis. */
+@media (min-width: 541px) {
+  .experience {
+    --driver-width: clamp(504px, calc((100svh - 410px) / .592), 676px);
+  }
+  .experience-header { height: 56px; padding: 0 max(28px, 4vw); }
+  .wordmark { font-size: 24px; }
+  .header-label { font-size: 8px; letter-spacing: 2px; }
+  .experience-intro {
+    position: relative;
+    top: auto;
+    left: auto;
+    width: min(680px, 88vw);
+    margin: 16px auto 12px;
+    text-align: center;
+  }
+  .intro-kicker { justify-content: center; font-size: 7px; letter-spacing: 1.6px; }
+  .intro-break { display: none; }
+  .intro-signature { display: none; }
+  .experience-intro h1 {
+    font-size: clamp(28px, 2.5vw, 36px);
+    line-height: 1.08;
+    letter-spacing: -1.3px;
+    margin-top: 8px;
+  }
+  .experience-intro h1 > svg { width: 23px; height: 23px; }
+  .experience-intro p { max-width: none; margin-top: 6px; font-size: 11px; line-height: 1.6; }
+  .system-line { margin-top: 0; padding: 8px 4vw; }
+  .system-line > span { display: none; }
+  .driver-journey { gap: 22px; }
+  .instruction { width: auto; margin: 10px 20px 0; min-height: 34px; }
+  .instruction strong { font-size: 9px; letter-spacing: 1.2px; }
+  .instruction p { font-size: 10px; margin-top: 5px; }
+  .project-deck { width: min(calc(var(--driver-width) + 32px), 88vw); margin: 10px auto 0; }
+  .deck-caption { font-size: 7px; margin-bottom: 10px; letter-spacing: 1.2px; }
+  .project-card-row { gap: 18px; }
+  .card-caption { top: calc(100% + 9px); font-size: 6px; letter-spacing: .3px; }
+  .reader-hint { margin-top: 28px; font-size: 9px; }
+  .driver-caption { font-size: 7px; margin-bottom: 10px; }
+  .device-help { display: none; }
+  .experience:not(:is(.state-active, .state-transforming, .state-reopening)) {
+    padding-bottom: 18px;
+  }
+  .experience:not(:is(.state-active, .state-transforming, .state-reopening)) .driver-scene {
+    position: relative;
+    left: auto;
+    top: auto;
+    bottom: auto;
+    margin: 16px auto 0;
+    transform: none;
+  }
+  .experience:not(:is(.state-active, .state-transforming, .state-reopening)) .input-controls {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    width: fit-content;
+    margin: 32px auto 0;
+    transform: none;
+  }
+  .experience:not(:is(.state-active, .state-transforming, .state-reopening)) .experience-footer {
+    position: relative;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    margin: 20px 4vw 0;
+  }
+  .state-active .driver-scene, .state-transforming .driver-scene, .state-reopening .driver-scene { left: 50%; }
+}
+
+.experience-side-notes { display: none; }
+@media (min-width: 1100px) and (min-height: 660px) {
+  .experience-side-notes { display: block; }
+  .studio-note {
+    position: absolute;
+    top: clamp(270px, 34svh, 365px);
+    width: clamp(160px, 14vw, 200px);
+    color: #a79aa9;
+  }
+  .studio-note-left { right: calc(50% + var(--driver-width) / 2 + 52px); }
+  .studio-note-right { left: calc(50% + var(--driver-width) / 2 + 52px); }
+  .studio-note:before { content: ""; position: absolute; top: 18px; width: 28px; height: 1px; background: #ffffff1a; }
+  .studio-note-left:before { right: -40px; }
+  .studio-note-right:before { left: -40px; }
+  .studio-note-kicker { font-size: 7px; letter-spacing: 1.5px; color: #887a91; }
+  .studio-note h2 { margin: 13px 0 24px; font-size: 22px; line-height: 1.25; font-weight: 500; letter-spacing: -.7px; color: #e4d8e4; }
+  .studio-note h2 > span { color: #817489; }
+  .studio-project-index, .studio-interaction-index { list-style: none; margin: 0; padding: 0; }
+  .studio-project-index li, .studio-interaction-index li { display: flex; align-items: flex-start; gap: 10px; padding: 14px 0; border-top: 1px solid #ffffff09; }
+  .studio-project-number, .studio-interaction-index li > span { font-size: 7px; color: #70617b; padding-top: 2px; }
+  .studio-note strong { font-size: 9px; font-weight: 500; color: #c9bacd; letter-spacing: .3px; }
+  .studio-note li p { font-size: 9px; line-height: 1.65; color: #88788f; margin-top: 5px; }
+  .studio-project-index i { width: 4px; height: 4px; border-radius: 50%; flex-shrink: 0; margin: 5px 0 0 auto; opacity: .7; }
+  .studio-note-foot { border-top: 1px solid #ffffff09; padding-top: 16px; margin-top: 16px; font-size: 9px; line-height: 1.8; color: #807287; }
+  .studio-note-right .studio-note-foot { font-size: 6px; letter-spacing: .9px; white-space: nowrap; }
+  .studio-note-signal { display: inline-block; width: 4px; height: 4px; margin-right: 6px; background: #8eb89d; border-radius: 50%; }
+}
+
+/* Desktop composition: enlarge the objects within one viewport, not the page. */
+@media (min-width: 1100px) and (min-height: 660px) {
+  .experience:not(:is(.state-active, .state-transforming, .state-reopening)) {
+    height: 100svh;
+    min-height: 100svh;
+    padding-bottom: 0;
+    display: grid;
+    grid-template-rows: 56px 32px 1fr 42px 28px;
+    grid-template-columns: 1fr;
+  }
+  .experience-header { grid-row: 1; }
+  .experience-intro {
+    position: absolute;
+    left: max(24px, calc(50% - var(--driver-width) / 2 - 220px));
+    top: 120px;
+    width: 180px;
+    margin: 0;
+    text-align: left;
+  }
+  .intro-kicker { justify-content: flex-start; font-size: 6px; line-height: 1.8; letter-spacing: 1px; }
+  .experience-intro h1 { font-size: 27px; margin-top: 10px; line-height: 1.12; }
+  .intro-break { display: block; }
+  .experience-intro h1 > svg { display: none; }
+  .experience-intro p { font-size: 10px; line-height: 1.7; margin-top: 10px; }
+  .system-line { grid-row: 2; border: 0; padding: 3px 0; background: transparent; }
+  .journey-icon { width: 22px; height: 22px; }
+  .driver-journey li { font-size: 8px; }
+  .experience:not(:is(.state-active, .state-transforming, .state-reopening)) .instruction { position: absolute; left: 50%; top: 90px; transform: translateX(-50%); margin: 0; width: var(--driver-width); min-height: 0; }
+  .instruction p { display: none; }
+  .experience:not(:is(.state-active, .state-transforming, .state-reopening)) .project-deck {
+    position: absolute;
+    top: 112px;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    width: var(--driver-width);
+  }
+  .deck-caption { margin-bottom: 8px; }
+  .card-caption { top: calc(100% + 7px); }
+  .reader-hint { display: none; }
+  .experience:not(:is(.state-active, .state-transforming, .state-reopening)) .driver-scene {
+    position: absolute;
+    top: auto;
+    bottom: clamp(85px, calc(85px + (100svh - 800px) * .62), 190px);
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+  }
+  .experience:not(:is(.state-active, .state-transforming, .state-reopening)) .input-controls {
+    grid-row: 4;
+    align-self: center;
+    margin: 0 auto;
+  }
+  .experience:not(:is(.state-active, .state-transforming, .state-reopening)) .experience-footer {
+    grid-row: 5;
+    align-self: center;
+    margin: 0 4vw;
+  }
+  .studio-note-left { top: 300px; right: calc(50% + var(--driver-width) / 2 + 40px); }
+  .studio-note-left > h2, .studio-note-left > .studio-note-kicker { display: none; }
+  .studio-note-right { top: 155px; left: calc(50% + var(--driver-width) / 2 + 40px); }
+  .studio-note { width: 180px; }
+  .studio-note:before { display: none; }
 }

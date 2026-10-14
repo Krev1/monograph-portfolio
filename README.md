@@ -1,8 +1,23 @@
 # KREV1 — DECADE DRIVER PORTFOLIO
 
+**Live website: [krev1.vercel.app](https://krev1.vercel.app/)**
+
 A single-page portfolio discovered through an original mechanical card reader. Choose a card to open and load automatically, or pull a handle and drag a card into the reader; push inward to transform, then explore the project and its evidenced ability cards. Reopen and pull the card upward to change projects.
 
 Built with Next.js App Router, React, TypeScript, SVG, CSS, GSAP and Lenis. GlareHover, SplitText and AnimatedContent are adapted from the selected React Bits TypeScript/CSS sources; their license and provenance are retained in src/components/react-bits. An unofficial fan concept informed by official Decadriver references; artwork, project emblems and optional synthesized sounds are original. No official image, logo or sampled transformation audio is shipped.
+
+## Current experience
+
+- Centered project cards and a magenta/black Driver, with project notes and interaction guidance at the sides on desktop.
+- Large cards and Driver inside a viewport-sized desktop opening layout; mobile uses a responsive stacked layout.
+- Click-to-load curved flight with a card flip, or smooth manual dragging. Push at least 20% of the card into the slot and release for automatic uptake.
+- Card layers follow the mechanism: rear rim and curved guide, then the card, then the front magenta shell. The seated card appears through the groove and permanent circular lens aperture.
+- Logo ignition followed by a two-beat heartbeat in the selected card color, concentric metal grooves, a rounded green status jewel, and aura while holding or feeding a card.
+- Mechanical handles rotate the reader and its lens contents; an empty Driver can also close. Arrival, transformation and docking animations respect reduced motion.
+- Hover highlights the physical grip without a rectangular button fill. Circular card-deck lighting fades smoothly into the background.
+- Thirteen original V13 sound effects and announcements, enabled through SOUND. Background music support is prepared but no soundtrack is included yet.
+
+Production release details and verification: [docs/PRODUCTION-RELEASE.md](docs/PRODUCTION-RELEASE.md).
 
 ## Run and verify
 

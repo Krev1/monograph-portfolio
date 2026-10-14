@@ -2,7 +2,7 @@
 
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
-import type { RefObject } from "react";
+import { useRef, type RefObject } from "react";
 import type { DriverState } from "./driver-machine";
 import { henshinFrame, HENSHIN_DURATION } from "./driver-timeline";
 
@@ -23,6 +23,7 @@ export function useDriverMotion({
   run: number;
   openness: number;
 }) {
+  const previousPlacement = useRef<DOMRect | null>(null);
   useGSAP(
     () => {
       if (!scope.current || !entering || reduced) return;
@@ -31,6 +32,12 @@ export function useDriverMotion({
       );
       const hardware = scope.current.querySelector(".driver-arrival");
       const timeline = gsap.timeline();
+      timeline.fromTo(
+        scope.current.querySelectorAll(".intro-kicker, .experience-intro h1, .experience-intro p"),
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: .65, stagger: .07, ease: "power3.out", clearProps: "opacity,transform" },
+        0,
+      );
       timeline.fromTo(
         cards,
         { opacity: 0.08, y: 18 },
@@ -73,7 +80,13 @@ export function useDriverMotion({
       // Reapply the current endpoint after the preceding context reverts.
       gsap.set(scene, { "--dock": dock, "--energy": 0, "--scan": 0 });
       if (identity) gsap.set(identity, { opacity: 0 });
-      if (state !== "transforming") return;
+      if (state !== "transforming") {
+        previousPlacement.current = scene.getBoundingClientRect();
+        return;
+      }
+      const placement = scene.getBoundingClientRect();
+      const previous = previousPlacement.current;
+      const arrival = scene.querySelector<HTMLElement>(".driver-arrival");
       const duration = reduced ? 100 : HENSHIN_DURATION;
       const clock = { elapsed: 0 };
       const energy = gsap.quickSetter(scene, "--energy");
@@ -94,6 +107,17 @@ export function useDriverMotion({
         ease: "none",
         onUpdate: render,
       });
+      // Preserve the last visible position across the flow-to-fixed layout change.
+      // Move the inner assembly so docking and mechanical rotation remain independent.
+      if (arrival && previous && !reduced) {
+        timeline.fromTo(
+          arrival,
+          { x: previous.left - placement.left, y: previous.top - placement.top },
+          { x: 0, y: 0, duration: 0.95, ease: "power3.inOut", clearProps: "transform" },
+          0,
+        );
+      }
+      previousPlacement.current = placement;
       const visibility = () => {
         if (document.visibilityState === "hidden") timeline.pause();
         else {

@@ -10,8 +10,8 @@ import {
   HANDLE_TRAVEL_RATIO,
   handleProgress,
   SNAP_THRESHOLD,
-  validDrop,
 } from "@/lib/driver-geometry";
+import type { Bounds } from "@/lib/driver-geometry";
 import { HENSHIN_DURATION, CARD_INSERT_DURATION } from "@/lib/driver-timeline";
 import DecadriverModel from "./decadriver-model";
 import ProjectStage from "./project-stage";
@@ -21,6 +21,8 @@ import { DriverAudio } from "@/lib/driver-audio";
 import type { DriverSound } from "@/lib/driver-sound-score";
 import { useDriverMotion } from "@/lib/driver-motion";
 import GlareHover from "./react-bits/GlareHover";
+import { DriverJourney, ExperienceIntro, ExperienceSideNotes, ReaderHint } from "./experience-chrome";
+import SpotlightSurface from "./spotlight-surface";
 
 type Lease = { pointerId: number; target: HTMLButtonElement } & (
   | {
@@ -41,6 +43,8 @@ type Lease = { pointerId: number; target: HTMLButtonElement } & (
       width: number;
       height: number;
       dragged: boolean;
+      slot: Bounds | null;
+      feeding: boolean;
     }
   | { kind: "eject"; y: number; travel: number; scale: number }
 );
@@ -51,6 +55,7 @@ type Ghost = {
   tilt: number;
   aligned: boolean;
 };
+type CardFlight = Ghost & { toX: number; toY: number; duration: number; fromDeck: boolean; flipFrom: number };
 type MotionMode = "auto" | "full" | "reduced";
 const MOTION_STORAGE_KEY = "krev1-driver-motion-v1";
 function CardFace({
@@ -99,6 +104,13 @@ function useReducedMotion() {
 export default function DecadeExperience() {
   const [model, dispatch] = useReducer(driverReducer, initialDriver);
   const [ghost, setGhost] = useState<Ghost | null>(null);
+  const ghostPosition = useRef<Ghost | null>(null);
+  const ghostElement = useRef<HTMLDivElement>(null);
+  const [flight, setFlight] = useState<CardFlight | null>(null);
+  const [feedDelay, setFeedDelay] = useState(0);
+  const [feedPreview, setFeedPreview] = useState<ProjectId | null>(null);
+  const [feedStart, setFeedStart] = useState<number | null>(null);
+  const manualPull = useRef(0);
   const [lift, setLift] = useState(0);
   const [abilityId, setAbilityId] = useState<string | null>(null);
   const [tapControls, setTapControls] = useState(false);
@@ -114,6 +126,7 @@ export default function DecadeExperience() {
   }, []);
   useEffect(() => {
     if (model.state === "open" && queuedCard) {
+      beginCardFlight(queuedCard);
       dispatch({ type: "INSERT_KEY", cardId: queuedCard });
       setQueuedCard(null);
     }
@@ -139,6 +152,11 @@ export default function DecadeExperience() {
   }
   const reduced =
     motionMode === "reduced" || (motionMode === "auto" && deviceReduced);
+  useEffect(() => {
+    if (!flight) return;
+    const timer = window.setTimeout(() => setFlight(null), flight.duration);
+    return () => window.clearTimeout(timer);
+  }, [flight]);
   const lease = useRef<Lease | null>(null);
   const modelRef = useRef(model);
   modelRef.current = model;
@@ -188,7 +206,7 @@ export default function DecadeExperience() {
     return () => observer.disconnect();
   }, []);
   const selected = driverProjects.find(
-    (project) => project.id === model.cardId,
+    (project) => project.id === (model.cardId ?? feedPreview),
   );
   const moving =
     ["opening", "closing", "reopening"].includes(model.state) &&
@@ -258,6 +276,19 @@ export default function DecadeExperience() {
       progress,
     );
   }, [soundEnabled, model.state, model.settling, model.openness, lift]);
+
+  useEffect(() => {
+    const active = soundEnabled && model.state === "active";
+    const syncMusic = () => audioRef.current?.setBackgroundMusic(
+      active && document.visibilityState !== "hidden",
+    );
+    syncMusic();
+    document.addEventListener("visibilitychange", syncMusic);
+    return () => {
+      document.removeEventListener("visibilitychange", syncMusic);
+      audioRef.current?.setBackgroundMusic(false);
+    };
+  }, [soundEnabled, model.state]);
 
   // Rendering and optional audio cannot hold the guarded mechanical deadline.
   useEffect(() => {
@@ -358,6 +389,10 @@ export default function DecadeExperience() {
     }
     if (pointerId !== undefined && pointerId !== held.pointerId) return;
     releaseLease();
+    ghostPosition.current = null;
+    setFeedPreview(null);
+    manualPull.current = 0;
+    sceneRef.current?.style.setProperty("--card-pull", "0");
     setGhost(null);
     setBackCard(null);
     setLift(0);
@@ -453,15 +488,42 @@ export default function DecadeExperience() {
       width,
       height,
       dragged: false,
+      slot: slotRef.current?.getBoundingClientRect() ?? null,
+      feeding: false,
     });
-    setGhost({
+    const initialGhost = {
       cardId,
       x: event.clientX + width / 2 - anchorX,
       y: event.clientY + height - anchorY,
       tilt: 0,
       aligned: false,
-    });
+    };
+    ghostPosition.current = initialGhost;
+    setGhost(initialGhost);
     dispatch({ type: "CARD_START", cardId });
+  }
+  function beginCardFlight(cardId: ProjectId, held?: Ghost | null) {
+    setFeedStart(null);
+    const slot = slotRef.current?.getBoundingClientRect();
+    const button = scopeRef.current?.querySelector<HTMLButtonElement>(`button[data-deck-card="${cardId}"]`);
+    const deck = button?.getBoundingClientRect();
+    if (reduced || !slot || !deck || !slot.width) {
+      setFlight(null);
+      setFeedDelay(0);
+      return;
+    }
+    const from = held ?? { cardId, x: deck.left + deck.width / 2, y: deck.bottom, tilt: 0, aligned: false };
+    const toX = slot.left + slot.width / 2, toY = slot.top;
+    const distance = Math.hypot(from.x - toX, from.y - toY);
+    const duration = held?.aligned ? (distance < 2 ? 0 : 120) : 480;
+    setFeedDelay(duration);
+    const flipper = scopeRef.current?.querySelector<HTMLElement>(held ? ".drag-card .card-flip" : `button[data-deck-card="${cardId}"] .card-flip`);
+    let flipFrom = held ? 180 : 0;
+    if (flipper && typeof DOMMatrixReadOnly !== "undefined") {
+      const matrix = new DOMMatrixReadOnly(getComputedStyle(flipper).transform);
+      flipFrom = Math.max(0, Math.min(180, Math.atan2(-matrix.m13, matrix.m11) * 180 / Math.PI));
+    }
+    setFlight(duration ? { ...from, toX, toY, duration, fromDeck: !held || !held.aligned, flipFrom } : null);
   }
   function startEject(event: PointerEvent<HTMLButtonElement>) {
     if (
@@ -484,6 +546,31 @@ export default function DecadeExperience() {
     });
     dispatch({ type: "EJECT_START" });
   }
+  function pushCard(held: Extract<Lease, { kind: "card" }>, x: number, y: number) {
+    const slot = held.slot;
+    if (!slot) return 0;
+    const tipX = x + held.width / 2 - held.anchorX;
+    const tipY = y + held.height - held.anchorY;
+    const centered = Math.abs(tipX - (slot.left + slot.width / 2)) < Math.max(28, slot.width * .65);
+    if (!held.feeding && centered && tipY >= slot.top && y - held.y >= 8) held.feeding = true;
+    if (!held.feeding) return 0;
+    // Once caught by the reader rails, small sideways hand movement cannot unseat it.
+    const leftRail = Math.abs(tipX - (slot.left + slot.width / 2)) > Math.max(80, slot.width * 1.5);
+    if (tipY < slot.top - 12 || leftRail) {
+      held.feeding = false;
+      setFeedPreview(null);
+      manualPull.current = 0;
+      sceneRef.current?.style.setProperty("--card-pull", "0");
+      return 0;
+    }
+    const scale = held.width / DRIVER_DIMENSIONS.cardWidth;
+    const travel = DRIVER_DIMENSIONS.cardHeight + DRIVER_DIMENSIONS.cardSeatX - DRIVER_DIMENSIONS.cardEntryX;
+    const depth = Math.max(0, Math.min(travel, (tipY - slot.top) / scale));
+    manualPull.current = (travel - depth) / DRIVER_DIMENSIONS.cardHeight;
+    sceneRef.current?.style.setProperty("--card-pull", String(manualPull.current));
+    setFeedPreview(held.cardId);
+    return depth / DRIVER_DIMENSIONS.cardHeight;
+  }
   function move(event: PointerEvent<HTMLButtonElement>) {
     const held = lease.current;
     if (!held || event.pointerId !== held.pointerId) return;
@@ -502,21 +589,36 @@ export default function DecadeExperience() {
     } else if (held.kind === "card") {
       held.dragged ||=
         Math.hypot(event.clientX - held.x, event.clientY - held.y) >= 8;
-      const slot = slotRef.current?.getBoundingClientRect() ?? null;
+      pushCard(held, event.clientX, event.clientY);
+      const slot = held.slot;
       const attraction = attractCard(
         { x: event.clientX, y: event.clientY },
         slot,
         held.previousX,
       );
-      const bottom = attraction.y + held.height - held.anchorY;
-      setGhost({
+      const bottom = event.clientY + held.height - held.anchorY;
+      const rawX = event.clientX + held.width / 2 - held.anchorX;
+      const centerX = slot ? slot.left + slot.width / 2 : rawX;
+      const proximity = slot ? Math.max(0, 1 - Math.abs(rawX - centerX) / Math.max(72, slot.width)) * Math.max(0, 1 - Math.abs(bottom - slot.top) / 90) : 0;
+      const strength = proximity * proximity * (3 - 2 * proximity);
+      const previousGhost = ghostPosition.current;
+      const nextGhost = {
         cardId: held.cardId,
         ...attraction,
-        x: attraction.aligned
-          ? attraction.x
-          : attraction.x + held.width / 2 - held.anchorX,
-        y: attraction.aligned && slot ? Math.min(bottom, slot.top) : bottom,
-      });
+        aligned: attraction.aligned || proximity > .3,
+        tilt: ((previousGhost?.tilt ?? 0) * .8 + Math.max(-4, Math.min(4, (event.clientX - held.previousX) * .15)) * .2) * (1 - strength),
+        x: rawX + (centerX - rawX) * strength,
+        y: slot ? bottom + (Math.min(bottom, slot.top) - bottom) * strength : bottom,
+      };
+      ghostPosition.current = nextGhost;
+      // Only the floating card moves. The deck, hardware and artwork stay mounted.
+      const element = ghostElement.current;
+      if (element) {
+        element.style.setProperty("--ghost-x", `${nextGhost.x}px`);
+        element.style.setProperty("--ghost-y", `${nextGhost.y}px`);
+        element.style.setProperty("--tilt", `${nextGhost.tilt}deg`);
+      }
+      if (previousGhost?.aligned !== nextGhost.aligned) setGhost(nextGhost);
       held.previousX = event.clientX;
     } else
       setLift(
@@ -552,27 +654,30 @@ export default function DecadeExperience() {
             : "Pull farther to reach the mechanical lock.",
         );
     } else if (held.kind === "card") {
-      const slot = slotRef.current?.getBoundingClientRect() ?? null;
-      const aligned = attractCard(
-        { x: event.clientX, y: event.clientY },
-        slot,
-        held.previousX,
-      );
       suppressCardClick.current = true;
       if (
         !held.dragged &&
         Math.hypot(event.clientX - held.x, event.clientY - held.y) < 8
       ) {
+        beginCardFlight(held.cardId, ghostPosition.current);
         dispatch({ type: "CARD_CANCEL" });
         dispatch({ type: "INSERT_KEY", cardId: held.cardId });
         return;
       }
-      const valid = validDrop({ x: held.x, y: held.y }, aligned, slot);
+      const valid = pushCard(held, event.clientX, event.clientY) >= .2;
+      if (valid) {
+        setFeedStart(manualPull.current * DRIVER_DIMENSIONS.cardHeight);
+        setFeedDelay(0);
+        setFlight(null);
+      }
+      setFeedPreview(null);
+      manualPull.current = 0;
+      sceneRef.current?.style.setProperty("--card-pull", "0");
       dispatch({ type: "CARD_DROP", valid });
       if (!valid) {
         setBackCard(null);
         setNotice(
-          "Card returned. Drag downward into the reader groove, or tap a card.",
+          "Card returned. Push about 20% of the card into the reader, then release.",
         );
       }
     } else {
@@ -609,7 +714,10 @@ export default function DecadeExperience() {
       if (modelRef.current.state === "idle") {
         setQueuedCard(cardId);
         dispatch({ type: "HANDLE_KEY" });
-      } else dispatch({ type: "INSERT_KEY", cardId });
+      } else {
+        if (modelRef.current.state === "open") beginCardFlight(cardId);
+        dispatch({ type: "INSERT_KEY", cardId });
+      }
     }
   }
   const status = {
@@ -618,7 +726,7 @@ export default function DecadeExperience() {
       ? "OPENING — CARD SELECTED"
       : "OPENING — PULL TO THE LOCK",
     open: "INSERT PROJECT CARD",
-    cardDragging: ghost?.aligned
+    cardDragging: feedPreview ? "PUSH CARD IN 20% — RELEASE TO LOAD" : ghost?.aligned
       ? "SLOT ALIGNED — RELEASE TO INSERT"
       : "DRAG CARD DOWN TO THE READER",
     inserting: "READING PROJECT CARD",
@@ -653,14 +761,16 @@ export default function DecadeExperience() {
     "--dock": dock,
     "--energy": 0,
     "--scan": 0,
-    "--card-pull": lift,
+    "--card-pull": feedPreview ? manualPull.current : lift,
   } as CSSProperties;
   const cardScale =
     sceneWidth === null ? null : sceneWidth / DRIVER_DIMENSIONS.viewportWidth;
   const experienceStyle = {
     "--driver-accent": selected?.mainCard.accent ?? "#ff3ea5",
     "--card-insert-duration": `${CARD_INSERT_DURATION}ms`,
-    "--card-entry-travel": `${DRIVER_DIMENSIONS.cardHeight + DRIVER_DIMENSIONS.cardSeatX - DRIVER_DIMENSIONS.cardEntryX}px`,
+    "--card-feed-delay": `${reduced ? 0 : feedDelay}ms`,
+    "--card-feed-duration": `${CARD_INSERT_DURATION - (reduced ? 0 : feedDelay)}ms`,
+    "--card-entry-travel": `${feedStart ?? DRIVER_DIMENSIONS.cardHeight + DRIVER_DIMENSIONS.cardSeatX - DRIVER_DIMENSIONS.cardEntryX}px`,
     "--project-card-width":
       cardScale === null
         ? undefined
@@ -679,6 +789,7 @@ export default function DecadeExperience() {
     onLostPointerCapture: (event: PointerEvent<HTMLButtonElement>) =>
       cancelGesture(event.pointerId),
   };
+  const displayedCard = ghost ? ghostPosition.current ?? ghost : flight;
   return (
     <main
       ref={scopeRef}
@@ -719,15 +830,8 @@ export default function DecadeExperience() {
           </a>
         </div>
       </header>
-      <div className="system-line">
-        <span>INTERACTIVE PORTFOLIO</span>
-        <div className="step-track" aria-label={"Step " + step + " of 5"}>
-          {[1, 2, 3, 4, 5].map((number) => (
-            <i key={number} className={number <= step ? "lit" : ""} />
-          ))}
-        </div>
-        <span>0{step} / 05</span>
-      </div>
+      {deckVisible && <><ExperienceIntro /><ExperienceSideNotes /></>}
+      <div className="system-line"><span>TRANSFORMATION SEQUENCE</span><DriverJourney step={step} /><span>0{step} / 05</span></div>
       <div
         className="instruction"
         role="status"
@@ -743,7 +847,9 @@ export default function DecadeExperience() {
               : queuedCard
                 ? "The Driver is opening to load your selected card."
                 : model.state === "open"
-                  ? "Insert a card, or push the handles inward to close."
+                  ? "Push about 20% of a card into the reader, then release to load."
+                  : feedPreview
+                    ? "Release after pushing 20% in. The reader will pull the card the rest of the way."
                   : model.state === "loaded"
                     ? "Close to transform, or pull the card upward to eject."
                     : model.state === "active"
@@ -753,9 +859,10 @@ export default function DecadeExperience() {
       </div>
       {deckVisible && (
         <section className="project-deck" aria-label="Project card deck">
+          <SpotlightSurface enabled={!reduced && !ghost}>
           <div className="deck-caption">
-            <span>PROJECT ARCHIVE</span>
-            <span>THREE CARDS / THREE WORLDS</span>
+            <span>SELECT YOUR WORLD</span>
+            <span>COLLECTION / 001—003</span>
           </div>
           <div className="project-card-row">
             {driverProjects.map((project, index) => (
@@ -767,12 +874,13 @@ export default function DecadeExperience() {
                 <button
                   ref={index === 0 ? firstCardRef : undefined}
                   type="button"
+                  data-deck-card={project.id}
                   className={
                     "project-card" +
                     (model.cardId === project.id ? " is-in-driver" : "") +
                     (backCard === project.id || queuedCard === project.id || model.cardId === project.id ? " is-face-down" : "") +
                     (model.state === "inserting" && model.cardId === project.id ? " is-flipping-to-reader" : "") +
-                    (ghost?.cardId === project.id ? " is-held" : "")
+                    (ghost?.cardId === project.id || (model.state === "inserting" && feedDelay > 0 && model.cardId === project.id) ? " is-held" : "")
                   }
                   style={
                     {
@@ -815,13 +923,19 @@ export default function DecadeExperience() {
                 >
                   <GlareHover
                     enabled={!reduced && model.cardId !== project.id && !ghost}
+                    glareOpacity={.23}
+                    glareSize={180}
+                    transitionDuration={650}
                   >
                     <FlippingCard project={project} />
                   </GlareHover>
                 </button>
+                <div className="card-caption" aria-hidden="true"><span>0{index + 1}</span><span>{["AI & DATA", "CODE & LEARNING", "DESIGN & SYSTEMS"][index]}</span></div>
               </div>
             ))}
           </div>
+          <ReaderHint />
+          </SpotlightSurface>
         </section>
       )}
       {model.state === "active" && selected && (
@@ -861,7 +975,7 @@ export default function DecadeExperience() {
             <DecadriverModel
               card={selected}
               cardPhase={
-                model.state === "inserting"
+                feedPreview ? "pulling" : model.state === "inserting"
                   ? "inserting"
                   : model.state === "ejecting"
                     ? model.settling
@@ -965,16 +1079,24 @@ export default function DecadeExperience() {
           <b>{selected?.title}</b>
         </div>
       )}
-      {ghost && (
+      {(ghost || flight) && (
         <div
-          className="drag-card project-card is-face-down"
+          ref={ghostElement}
+          className={"drag-card project-card is-face-down" + (feedPreview ? " is-feeding" : "") + (flight ? " is-handoff" + (flight.fromDeck ? " from-deck" : "") : "")}
+          data-testid={flight ? "card-handoff" : "drag-card"}
           style={
             {
-              left: ghost.x,
-              top: ghost.y,
-              "--tilt": ghost.tilt + "deg",
+              left: 0,
+              top: 0,
+              "--ghost-x": `${displayedCard!.x}px`,
+              "--ghost-y": `${displayedCard!.y}px`,
+              "--tilt": displayedCard!.tilt + "deg",
+              "--flight-x": `${flight ? flight.toX - flight.x : 0}px`,
+              "--flight-y": `${flight ? flight.toY - flight.y : 0}px`,
+              "--flight-duration": `${flight?.duration ?? 0}ms`,
+              "--flight-flip-from": `${flight?.flipFrom ?? 0}deg`,
               "--card-accent": driverProjects.find(
-                (project) => project.id === ghost.cardId,
+                (project) => project.id === (ghost ?? flight)!.cardId,
               )!.mainCard.accent,
             } as CSSProperties
           }
@@ -982,7 +1104,7 @@ export default function DecadeExperience() {
         >
           <FlippingCard
             project={driverProjects.find(
-              (project) => project.id === ghost.cardId,
+              (project) => project.id === (ghost ?? flight)!.cardId,
             )!}
           />
         </div>
@@ -1003,7 +1125,7 @@ export default function DecadeExperience() {
           When open, reverse the arrow to close with or without a card. Enter or
           Space performs the current handle operation. On an open Driver, Enter
           on a project card inserts it. Choosing a card while closed opens the
-          Driver and loads that card. Tap a card or drag it down when open.
+          Driver and loads that card. Tap a card, or push about 20% of it into the open reader and release to load.
           Arrow Up or Enter on the loaded card ejects it. Escape cancels a drag.
         </p>
         {model.cardId && (

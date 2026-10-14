@@ -1,3 +1,4 @@
+import { DRIVER_BACKGROUND_MUSIC } from "./driver-background-music";
 import type { ProjectId } from "./driver-machine";
 import { DRIVER_ASSETS, driverSoundScore } from "./driver-sound-score";
 import type {
@@ -162,6 +163,10 @@ export class DriverAudio {
   private readerSpeech = false;
   private standby: LoopHandle | null = null;
   private mechanism: LoopHandle | null = null;
+  private background: LoopHandle | null = null;
+  private backgroundBuffer: AudioBuffer | null = null;
+  private backgroundLoading: Promise<void> | null = null;
+  private backgroundWanted = false;
   private previousProgress = 0;
   private previousMoveTime = 0;
   private enabled = false;
@@ -309,6 +314,50 @@ export class DriverAudio {
       },
     };
   }
+  setBackgroundMusic(on: boolean) {
+    this.backgroundWanted = on;
+    if (!on || !this.enabled || this.disposed) {
+      this.background?.stop();
+      this.background = null;
+      return;
+    }
+    const sourceUrl = DRIVER_BACKGROUND_MUSIC.source;
+    if (!sourceUrl || this.background) return;
+    if (!this.backgroundBuffer) {
+      if (!this.backgroundLoading) {
+        this.backgroundLoading = (async () => {
+          const response = await fetch(sourceUrl, { signal: this.requests.signal });
+          if (!response.ok) throw new Error("Background music unavailable");
+          const buffer = await this.context.decodeAudioData(await response.arrayBuffer());
+          if (!this.disposed) this.backgroundBuffer = buffer;
+        })().catch(() => {
+          // A missing track never interrupts interaction or transformation.
+        }).finally(() => {
+          this.backgroundLoading = null;
+          if (this.backgroundBuffer && this.backgroundWanted && this.enabled && !this.disposed)
+            this.setBackgroundMusic(true);
+        });
+      }
+      return;
+    }
+    const source = this.context.createBufferSource();
+    source.buffer = this.backgroundBuffer;
+    source.loop = true;
+    const gain = this.context.createGain();
+    gain.gain.setValueAtTime(0, this.context.currentTime);
+    gain.gain.linearRampToValueAtTime(DRIVER_BACKGROUND_MUSIC.volume, this.context.currentTime + 1.2);
+    source.connect(gain);
+    gain.connect(this.master);
+    source.start();
+    this.background = {
+      source, gain,
+      stop: () => {
+        try { source.stop(); } catch { /* Already stopped. */ }
+        source.disconnect();
+        gain.disconnect();
+      },
+    };
+  }
   setStandby(on: boolean) {
     if (!on || !this.enabled || this.disposed) {
       this.standby?.stop();
@@ -345,6 +394,7 @@ export class DriverAudio {
     this.mechanism.gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
   }
   stopAll() {
+    this.setBackgroundMusic(false);
     this.cue?.stop();
     this.cue = null;
     this.stopSpeech();
@@ -361,6 +411,7 @@ export class DriverAudio {
     this.mute();
     this.requests.abort();
     this.voices = {};
+    this.backgroundBuffer = null;
     this.master.disconnect();
     this.limiter.disconnect();
     void this.context.close().catch(() => {});
